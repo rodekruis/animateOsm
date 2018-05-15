@@ -21,12 +21,13 @@
  ***************************************************************************/
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
-from PyQt5.QtGui import QAction, QIcon
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction
 # Initialize Qt resources from file resources.py
-import resources
+from .resources import *
 
 # Import the code for the DockWidget
-from aniosm_dockwidget import AnimateOsmDockWidget
+from .aniosm_dockwidget import AnimateOsmDockWidget
 import os.path
 
 

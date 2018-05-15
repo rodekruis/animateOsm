@@ -23,14 +23,14 @@
 
 import os
 
-from PyQt5 import QtGui, uic
+from PyQt5 import QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtSignal
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'aniosm_dockwidget_base.ui'))
 
 
-class AnimateOsmDockWidget(QtGui.QDockWidget, FORM_CLASS):
+class AnimateOsmDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
