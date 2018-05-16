@@ -23,7 +23,7 @@
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
-from qgis.core import QgsMessageLog, Qgis
+from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject
 #from qgis.PyQt.QtCore import Qgis
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -185,6 +185,7 @@ class AnimateOsm:
             callback=self.run,
             parent=self.iface.mainWindow())
 
+
     #--------------------------------------------------------------------------
 
     def onClosePlugin(self):
@@ -237,14 +238,73 @@ class AnimateOsm:
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
+
+
             # show the dockwidget
             # TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
-            self.log(u'test')
+ 
+            self.dockwidget.pushButton_load.clicked.connect(self.load_layers)
 
             # set default datetimes
-            self.log(self.dockwidget.dateTimeEdit_end.dateTime())
             self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
-            self.dockwidget.dateTimeEdit_start.setDateTime(self.dockwidget.dateTimeEdit_end.dateTime().addDays(1))
+            self.dockwidget.dateTimeEdit_start.setDateTime(self.dockwidget.dateTimeEdit_end.dateTime().addDays(-7))
 
+
+    def load_layers(self):
+        self.log(u'start loading layers ...')
+        overpass_query = self.get_overpass_query()
+        self.log(overpass_query)
+
+ 
+    def get_osm_data(self):
+        pass
+
+
+    def get_overpass_query(self):
+
+        #Example Overpass Turbo query:
+        '''
+        [out:xml][timeout:25]
+        [diff:"2018-03-16T15:00:00Z","2018-04-16T15:00:00Z"];
+        (
+          node["building"](17.99979487484851,-63.15679550170898,18.126112640728326,-62.99491882324219);
+          way["building"](17.99979487484851,-63.15679550170898,18.126112640728326,-62.99491882324219);
+          relation["building"](17.99979487484851,-63.15679550170898,18.126112640728326,-62.99491882324219);
+          );
+        (._;>;);
+        out meta;
+        '''
+
+        start_time = self.dockwidget.dateTimeEdit_start.dateTime().toString('yyyy-MM-ddThh:mm:ssZ')
+        end_time = self.dockwidget.dateTimeEdit_end.dateTime().toString('yyyy-MM-ddThh:mm:ssZ')
+        bbox = self.get_overpass_bbox()
+
+        result = '[out:xml][timeout:25]\n'
+        result += '[diff:"%s","%s"];\n' % (start_time, end_time)
+        result += '(\n'
+        result += 'node["building"]%s;\n' % (bbox)
+        result += 'way["building"]%s;\n' % (bbox)
+        result += 'relation["building"]%s;\n' % (bbox)
+        result += ');\n(._;>;);\nout meta;\n'
+
+        return result
+
+
+
+    def get_overpass_bbox(self):
+        extent = self.iface.mapCanvas().extent()
+
+        map_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
+        wgs84_crs = QgsCoordinateReferenceSystem().fromEpsgId(4326)
+
+        # transform if not wgs84
+        if not map_crs == wgs84_crs:
+            transform = QgsCoordinateTransform(map_crs, wgs84_crs, QgsProject.instance())
+            extent = transform.transformBoundingBox(extent)
+
+
+        result = '(%s, %s, %s, %s)' % (extent.yMinimum(), extent.xMinimum(), extent.yMaximum(), extent.xMaximum())  
+        #self.log(result)
+        return result
