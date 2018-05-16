@@ -20,9 +20,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
+from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
+from qgis.core import QgsMessageLog, Qgis
+#from qgis.PyQt.QtCore import Qgis
 # Initialize Qt resources from file resources.py
 from .resources import *
 
@@ -73,6 +75,8 @@ class AnimateOsm:
 
         self.pluginIsActive = False
         self.dockwidget = None
+
+        self.do_log = True
 
 
     # noinspection PyMethodMayBeStatic
@@ -165,6 +169,12 @@ class AnimateOsm:
         return action
 
 
+
+    def log(self, message, tab=u'animate osm'):
+        if self.do_log:
+            QgsMessageLog.logMessage(str(message), tab, level=Qgis.Info)
+            #progress.setText('  '+str(message))
+
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
@@ -231,4 +241,10 @@ class AnimateOsm:
             # TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
+            self.log(u'test')
+
+            # set default datetimes
+            self.log(self.dockwidget.dateTimeEdit_end.dateTime())
+            self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
+            self.dockwidget.dateTimeEdit_start.setDateTime(self.dockwidget.dateTimeEdit_end.dateTime().addDays(1))
 
