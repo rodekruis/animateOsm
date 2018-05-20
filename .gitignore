@@ -3,4 +3,6 @@
 plugin/AnimateOsm/resources.py
 plugin/AnimateOsm/scripts/compile-strings.sh
 plugin/plugin
+*.qgs
+*.qgd
 
