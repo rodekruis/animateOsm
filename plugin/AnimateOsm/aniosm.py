@@ -278,12 +278,13 @@ class AnimateOsm:
         overpass_query = self.get_overpass_query()
         self.log(overpass_query)
 
+        # TODO: download data and store as data/diff.osm
+
         # TODO: create polygon and linestring layers, or even buildings, roads etc...
         self.create_memory_layer()
 
         parser = OsmDiffParser()
-        # TODO: use os.path.join()
-        parser.read(self.plugin_dir + '/data/diff.osm')
+        parser.read(os.path.join(self.plugin_dir, 'data', 'diff.osm'))
         self.log(parser)
 
         for way in parser.ways:
@@ -294,6 +295,8 @@ class AnimateOsm:
 
 
         #self.calculate_frame_age(self.polygon_layer, 1505481016000, 3600000)
+        #self.dockwidget.horizontalSlider_frames.setValue(self.dockwidget.horizontalSlider_frames.maximum())
+        self.update_slider()
 
 
 
@@ -398,6 +401,9 @@ class AnimateOsm:
         self.polygon_layer.updateFields()
 
         QgsProject.instance().addMapLayer(self.polygon_layer)
+
+        polygonQml = os.path.join(self.plugin_dir,'data','ani_osm_polygon_pink.qml')
+        self.polygon_layer.loadNamedStyle(polygonQml)
         #self.layer_group.insertLayer(0, self.osm_diff_polygon_layer)  # now add to legend in current layer group
 
 
