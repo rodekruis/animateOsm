@@ -282,6 +282,9 @@ class AnimateOsm:
         self.iface.mapCanvas().refreshAllLayers()
 
 
+        self.calculate_frame_age(self.polygon_layer, 1505481016000, 3600000)
+
+
 
 
     def update_interval(self):
@@ -364,14 +367,15 @@ class AnimateOsm:
         self.polygon_layer = QgsVectorLayer(feature_type, layer_name, 'memory')
         self.polygon_provider = self.polygon_layer.dataProvider()
 
-        osm_id_field = QgsField("osm_id", QVariant.LongLong, 'int8', 15)
-        #osm_id_field.setLength(15)
+        osm_id_field = QgsField("osm_id", QVariant.LongLong, 'int8')
         user_field = QgsField("user", QVariant.String)
-        user_field.setLength(40)
+        user_field.setLength(80)
         timestamp_field = QgsField("timestamp", QVariant.DateTime)
-        timestamp_field.setLength(24)
+        epoch_field = QgsField("epoch", QVariant.LongLong, 'int8')
+        age_field = QgsField("frame_age", QVariant.Int)
 
-        self.polygon_provider.addAttributes([osm_id_field, user_field, timestamp_field])
+
+        self.polygon_provider.addAttributes([osm_id_field, user_field, timestamp_field, epoch_field, age_field])
         self.polygon_layer.updateFields()
 
         QgsProject.instance().addMapLayer(self.polygon_layer)
@@ -381,13 +385,37 @@ class AnimateOsm:
 
     def add_polygon(self, way):
         feat = QgsFeature()
+
         feat.setGeometry(QgsGeometry.fromWkt(way['wkt']))
-        #feat.setAttribute('osm_id', 1) #way['osm_id'])
+
         attributes = []
         attributes.append(long(way['osm_id']))
         attributes.append(way['user'])
         attributes.append(way['timestamp'])
+        attributes.append(QDateTime.fromString(way['timestamp'],'yyyy-MM-ddThh:mm:ssZ').toMSecsSinceEpoch())
+        # set age to 1 to always get the data visible after loading
+        attributes.append(1)
 
         feat.setAttributes(attributes)
+
         self.polygon_provider.addFeatures([feat])
+
+
+
+    def calculate_frame_age(self, layer, frame_epoch, interval):
+        # set frame age for all features. Null for future features
+        epoch_field_index = layer.fields().indexFromName('epoch')
+        age_field_index = layer.fields().indexFromName('frame_age')
+        
+        for feat in layer.getFeatures():
+            feat_epoch = feat.attributes()[epoch_field_index]
+            if feat_epoch <= frame_epoch:
+                age_msecs = frame_epoch - feat_epoch
+                frame_age = ceil(age_msecs / interval)
+            else:
+                frame_age = None
+            attrs = {age_field_index: frame_age}
+            layer.dataProvider().changeAttributeValues({feat.id(): attrs})
+
+
 
