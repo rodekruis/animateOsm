@@ -25,13 +25,13 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
 from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, \
     QgsVectorLayer, QgsField, QgsProject, QgsFeature, QgsGeometry
-#from qgis.PyQt.QtCore import Qgis
 # Initialize Qt resources from file resources.py
 from .resources import *
 
 # Import the code for the DockWidget
 from .aniosm_dockwidget import AnimateOsmDockWidget
 import os.path
+from math import floor, ceil
 
 from .osm_diff import OsmDiffParser
 
@@ -248,11 +248,18 @@ class AnimateOsm:
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
  
-            self.dockwidget.pushButton_load.clicked.connect(self.load_layers)
-
             # set default datetimes
+            self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-7))
             self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
-            self.dockwidget.dateTimeEdit_start.setDateTime(self.dockwidget.dateTimeEdit_end.dateTime().addDays(-7))
+
+            # connections
+            self.dockwidget.pushButton_load.clicked.connect(self.load_layers)
+            
+            self.dockwidget.dateTimeEdit_start.dateTimeChanged.connect(self.update_interval)
+            self.dockwidget.dateTimeEdit_end.dateTimeChanged.connect(self.update_interval)
+            self.dockwidget.spinBox_interval.valueChanged.connect(self.update_interval)
+
+            self.update_interval()
 
 
     def load_layers(self):
@@ -260,24 +267,39 @@ class AnimateOsm:
         overpass_query = self.get_overpass_query()
         self.log(overpass_query)
 
+        # TODO: create polygon and linestring layers, or even buildings, roads etc...
         self.create_memory_layer()
 
         parser = OsmDiffParser()
-        self.log(self.plugin_dir)
+        # TODO: use os.path.join()
         parser.read(self.plugin_dir + '/data/diff.osm')
         self.log(parser)
 
         for way in parser.ways:
-            self.log(parser.ways[way])
             self.add_polygon(parser.ways[way])
         self.polygon_layer.updateExtents()
 
+        self.iface.mapCanvas().refreshAllLayers()
 
 
 
 
+    def update_interval(self):
+        interval_msecs = self.dockwidget.spinBox_interval.value() * 3600000
+        
+        start_time_msecs = self.dockwidget.dateTimeEdit_start.dateTime().toMSecsSinceEpoch()
+        animation_start_time_msecs = floor(start_time_msecs / interval_msecs) * interval_msecs
+        self.animation_start_time = QDateTime.fromMSecsSinceEpoch(animation_start_time_msecs)
 
+        end_time_msecs = self.dockwidget.dateTimeEdit_end.dateTime().toMSecsSinceEpoch()
+        animation_end_time_msecs = ceil(end_time_msecs / interval_msecs) * interval_msecs
+        self.animation_end_time = QDateTime.fromMSecsSinceEpoch(animation_end_time_msecs)
 
+        number_of_frames = ((animation_end_time_msecs - animation_start_time_msecs) / interval_msecs) + 1
+
+        self.dockwidget.label_animation_start.setText(self.animation_start_time.toString(self.dockwidget.dateTimeEdit_start.displayFormat()))
+        self.dockwidget.label_animation_end.setText(self.animation_end_time.toString(self.dockwidget.dateTimeEdit_end.displayFormat()))
+        self.dockwidget.label_frames.setText(u'%s frames' % number_of_frames)
 
 
  
@@ -300,8 +322,8 @@ class AnimateOsm:
         out meta;
         '''
 
-        start_time = self.dockwidget.dateTimeEdit_start.dateTime().toString('yyyy-MM-ddThh:mm:ssZ')
-        end_time = self.dockwidget.dateTimeEdit_end.dateTime().toString('yyyy-MM-ddThh:mm:ssZ')
+        start_time = self.animation_start_time.toString('yyyy-MM-ddThh:mm:ssZ')
+        end_time = self.animation_end_time.toString('yyyy-MM-ddThh:mm:ssZ')
         bbox = self.get_overpass_bbox()
 
         result = '[out:xml][timeout:25]\n'
@@ -327,10 +349,14 @@ class AnimateOsm:
             transform = QgsCoordinateTransform(map_crs, wgs84_crs, QgsProject.instance())
             extent = transform.transformBoundingBox(extent)
 
-
-        result = '(%s, %s, %s, %s)' % (extent.yMinimum(), extent.xMinimum(), extent.yMaximum(), extent.xMaximum())  
-        #self.log(result)
+        result = '(%s, %s, %s, %s)' % (
+            round(extent.yMinimum(), 8),
+            round(extent.xMinimum(), 8),
+            round(extent.yMaximum(), 8),
+            round(extent.xMaximum(), 8))
         return result
+
+
 
     def create_memory_layer(self, feature_type=u'polygon'):
         layer_name = u'osm_diff_%ss' % (feature_type)
@@ -351,9 +377,9 @@ class AnimateOsm:
         QgsProject.instance().addMapLayer(self.polygon_layer)
         #self.layer_group.insertLayer(0, self.osm_diff_polygon_layer)  # now add to legend in current layer group
 
+
+
     def add_polygon(self, way):
-        self.log(way)
-        self.log(way['osm_id'])
         feat = QgsFeature()
         feat.setGeometry(QgsGeometry.fromWkt(way['wkt']))
         #feat.setAttribute('osm_id', 1) #way['osm_id'])
