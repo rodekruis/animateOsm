@@ -20,10 +20,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime
+from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime, QVariant
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
-from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject
+from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, \
+    QgsVectorLayer, QgsField, QgsProject, QgsFeature, QgsGeometry
 #from qgis.PyQt.QtCore import Qgis
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -31,6 +32,8 @@ from .resources import *
 # Import the code for the DockWidget
 from .aniosm_dockwidget import AnimateOsmDockWidget
 import os.path
+
+from .osm_diff import OsmDiffParser
 
 
 class AnimateOsm:
@@ -257,6 +260,26 @@ class AnimateOsm:
         overpass_query = self.get_overpass_query()
         self.log(overpass_query)
 
+        self.create_memory_layer()
+
+        parser = OsmDiffParser()
+        self.log(self.plugin_dir)
+        parser.read(self.plugin_dir + '/data/diff.osm')
+        self.log(parser)
+
+        for way in parser.ways:
+            self.log(parser.ways[way])
+            self.add_polygon(parser.ways[way])
+        self.polygon_layer.updateExtents()
+
+
+
+
+
+
+
+
+
  
     def get_osm_data(self):
         pass
@@ -308,3 +331,37 @@ class AnimateOsm:
         result = '(%s, %s, %s, %s)' % (extent.yMinimum(), extent.xMinimum(), extent.yMaximum(), extent.xMaximum())  
         #self.log(result)
         return result
+
+    def create_memory_layer(self, feature_type=u'polygon'):
+        layer_name = u'osm_diff_%ss' % (feature_type)
+        feature_type += u'?crs=epsg:4326'
+        self.polygon_layer = QgsVectorLayer(feature_type, layer_name, 'memory')
+        self.polygon_provider = self.polygon_layer.dataProvider()
+
+        osm_id_field = QgsField("osm_id", QVariant.LongLong, 'int8', 15)
+        #osm_id_field.setLength(15)
+        user_field = QgsField("user", QVariant.String)
+        user_field.setLength(40)
+        timestamp_field = QgsField("timestamp", QVariant.DateTime)
+        timestamp_field.setLength(24)
+
+        self.polygon_provider.addAttributes([osm_id_field, user_field, timestamp_field])
+        self.polygon_layer.updateFields()
+
+        QgsProject.instance().addMapLayer(self.polygon_layer)
+        #self.layer_group.insertLayer(0, self.osm_diff_polygon_layer)  # now add to legend in current layer group
+
+    def add_polygon(self, way):
+        self.log(way)
+        self.log(way['osm_id'])
+        feat = QgsFeature()
+        feat.setGeometry(QgsGeometry.fromWkt(way['wkt']))
+        #feat.setAttribute('osm_id', 1) #way['osm_id'])
+        attributes = []
+        attributes.append(long(way['osm_id']))
+        attributes.append(way['user'])
+        attributes.append(way['timestamp'])
+
+        feat.setAttributes(attributes)
+        self.polygon_provider.addFeatures([feat])
+
