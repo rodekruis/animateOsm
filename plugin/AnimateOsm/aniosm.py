@@ -80,6 +80,7 @@ class AnimateOsm:
         self.dockwidget = None
 
         self.do_log = True
+        self.polygon_layer = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -249,8 +250,16 @@ class AnimateOsm:
             self.dockwidget.show()
  
             # set default datetimes
-            self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-7))
-            self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
+            #self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-7))
+            #self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
+            # for testing 08-09-17 19:57
+            test_start_date = QDateTime.fromMSecsSinceEpoch(1504592079000)
+            test_end_date = QDateTime.fromMSecsSinceEpoch(1507918747000)
+
+            #test_end_date = QDateTime.fromString('08-09-17 19:57',self.dockwidget.dateTimeEdit_end.displayFormat())
+            self.dockwidget.dateTimeEdit_start.setDateTime(test_start_date)
+            self.dockwidget.dateTimeEdit_end.setDateTime(test_end_date)
+
 
             # connections
             self.dockwidget.pushButton_load.clicked.connect(self.load_layers)
@@ -258,6 +267,8 @@ class AnimateOsm:
             self.dockwidget.dateTimeEdit_start.dateTimeChanged.connect(self.update_interval)
             self.dockwidget.dateTimeEdit_end.dateTimeChanged.connect(self.update_interval)
             self.dockwidget.spinBox_interval.valueChanged.connect(self.update_interval)
+
+            self.dockwidget.horizontalSlider_frames.valueChanged.connect(self.update_slider)
 
             self.update_interval()
 
@@ -282,27 +293,35 @@ class AnimateOsm:
         self.iface.mapCanvas().refreshAllLayers()
 
 
-        self.calculate_frame_age(self.polygon_layer, 1505481016000, 3600000)
+        #self.calculate_frame_age(self.polygon_layer, 1505481016000, 3600000)
+
+
 
 
 
 
     def update_interval(self):
-        interval_msecs = self.dockwidget.spinBox_interval.value() * 3600000
+        self.interval_msecs = self.dockwidget.spinBox_interval.value() * 3600000
         
         start_time_msecs = self.dockwidget.dateTimeEdit_start.dateTime().toMSecsSinceEpoch()
-        animation_start_time_msecs = floor(start_time_msecs / interval_msecs) * interval_msecs
+        animation_start_time_msecs = floor(start_time_msecs / self.interval_msecs) * self.interval_msecs
         self.animation_start_time = QDateTime.fromMSecsSinceEpoch(animation_start_time_msecs)
 
         end_time_msecs = self.dockwidget.dateTimeEdit_end.dateTime().toMSecsSinceEpoch()
-        animation_end_time_msecs = ceil(end_time_msecs / interval_msecs) * interval_msecs
+        animation_end_time_msecs = ceil(end_time_msecs / self.interval_msecs) * self.interval_msecs
         self.animation_end_time = QDateTime.fromMSecsSinceEpoch(animation_end_time_msecs)
 
-        number_of_frames = ((animation_end_time_msecs - animation_start_time_msecs) / interval_msecs) + 1
+        number_of_frames = round((animation_end_time_msecs - animation_start_time_msecs) / self.interval_msecs) + 1
 
         self.dockwidget.label_animation_start.setText(self.animation_start_time.toString(self.dockwidget.dateTimeEdit_start.displayFormat()))
         self.dockwidget.label_animation_end.setText(self.animation_end_time.toString(self.dockwidget.dateTimeEdit_end.displayFormat()))
         self.dockwidget.label_frames.setText(u'%s frames' % number_of_frames)
+
+        self.dockwidget.horizontalSlider_frames.setMinimum(1)
+        self.dockwidget.horizontalSlider_frames.setMaximum(number_of_frames)
+        self.dockwidget.horizontalSlider_frames.setValue(number_of_frames)
+
+
 
 
  
@@ -418,4 +437,19 @@ class AnimateOsm:
             layer.dataProvider().changeAttributeValues({feat.id(): attrs})
 
 
+    def update_slider(self):
+        frame_epoch = ((self.dockwidget.horizontalSlider_frames.value() - 1) * self.interval_msecs) + self.animation_start_time.toMSecsSinceEpoch()
+        frame_time = QDateTime.fromMSecsSinceEpoch(frame_epoch)
+        self.dockwidget.label_actual_frame.setText('frame: %s (%s)' % (
+            self.dockwidget.horizontalSlider_frames.value(),
+            frame_time.toString(self.dockwidget.dateTimeEdit_end.displayFormat()))
+        )
+        #self.dockwidget.label_actual_frame.setText('frame: %s' % ())
+        #self.log('update request')
+        self.update_map(frame_epoch)
 
+    def update_map(self, frame_epoch):
+        if self.polygon_layer is not None:
+            #self.log('updating')
+            self.calculate_frame_age(self.polygon_layer, frame_epoch, self.interval_msecs)
+            self.iface.mapCanvas().refreshAllLayers()

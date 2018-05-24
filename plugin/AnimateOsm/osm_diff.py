@@ -115,8 +115,11 @@ class OsmDiffParser():
         points = []
         nds = way.findall('nd')
         for nd in nds:
-            ndid = nd.attrib['ref'] 
-            points.append('%s %s' % (self.nodes[ndid]['lon'], self.nodes[ndid]['lat']))
+            ndid = nd.attrib['ref']
+            try:
+                points.append('%s %s' % (self.nodes[ndid]['lon'], self.nodes[ndid]['lat']))
+            except:
+                pass
         if len(points) > 3:
             # TODO: check if type is polygon or linestring (or point)
             result['wkt'] = 'POLYGON((%s))' % (','.join(points))
