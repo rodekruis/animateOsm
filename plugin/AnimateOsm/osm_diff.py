@@ -1,5 +1,6 @@
 #import urllib2
 import xml.etree.ElementTree as ET
+import time
 
 
 '''
@@ -11,7 +12,7 @@ import xml.etree.ElementTree as ET
 	relation["building"](18.024057499596754, -63.08702778317096, 18.029378372819536, -63.07829188032329);
 );
 (._;>;);
-out meta;
+out meta geom;
 '''
 
 def download_osm_diff(query, url=r'https://overpass-turbo.eu/', filename='data/diff.osm'):
@@ -32,6 +33,16 @@ class OsmDiffParser():
     def clear(self):
         self.nodes = {}
         self.ways = {}
+
+    def reset_time_range(self):
+        ts = time.mktime(time.strptime(next(iter(self.ways))['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+        self.min_timestamp = ts
+        self.max_timestamp = ts
+        if len(self.ways) > 0:
+            for key in self.ways:
+                ts = time.mktime(time.strptime(self.ways[key]['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+                self.min_timestamp = min(self.min_timestamp, ts)
+                self.max_timestamp = min(self.min_timestamp, ts)
 
 
     def read(self, filename):
@@ -87,6 +98,8 @@ class OsmDiffParser():
 
         print(len(self.nodes))
         print(len(self.ways))
+
+
         
     def parse_node(self, node):
         #<node id="1703119312" lat="18.0242059" lon="-63.0808480" version="2" timestamp="2015-04-15T06:31:13Z" changeset="30228200" uid="402624" user="bdiscoe"/>
@@ -112,14 +125,24 @@ class OsmDiffParser():
             print('Invalid way')
             return None
 
+        p = True
         points = []
         nds = way.findall('nd')
         for nd in nds:
             ndid = nd.attrib['ref']
             try:
-                points.append('%s %s' % (self.nodes[ndid]['lon'], self.nodes[ndid]['lat']))
-            except:
-                pass
+                # node has geometry:
+                points.append('%s %s' % (nd.attrib['lon'], nd.attrib['lat']))
+            except: 
+                try:
+                    if p:
+                        print('I should never get here')
+                        p = False
+                    # if node exists in file, get lat lon from it
+                    points.append('%s %s' % (self.nodes[ndid]['lon'], self.nodes[ndid]['lat']))
+                except:
+                    # geometry is not available :(
+                    pass
         if len(points) > 3:
             # TODO: check if type is polygon or linestring (or point)
             result['wkt'] = 'POLYGON((%s))' % (','.join(points))

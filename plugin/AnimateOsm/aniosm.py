@@ -298,6 +298,8 @@ class AnimateOsm:
         #self.dockwidget.horizontalSlider_frames.setValue(self.dockwidget.horizontalSlider_frames.maximum())
         self.update_slider()
 
+        #parser.get_time_range()
+
 
 
 
@@ -344,7 +346,7 @@ class AnimateOsm:
           relation["building"](17.99979487484851,-63.15679550170898,18.126112640728326,-62.99491882324219);
           );
         (._;>;);
-        out meta;
+        out meta geom;
         '''
 
         start_time = self.animation_start_time.toString('yyyy-MM-ddThh:mm:ssZ')
@@ -357,7 +359,7 @@ class AnimateOsm:
         result += 'node["building"]%s;\n' % (bbox)
         result += 'way["building"]%s;\n' % (bbox)
         result += 'relation["building"]%s;\n' % (bbox)
-        result += ');\n(._;>;);\nout meta;\n'
+        result += ');\n(._;>;);\nout meta geom;\n'
 
         return result
 
