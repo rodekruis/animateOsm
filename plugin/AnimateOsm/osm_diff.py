@@ -25,6 +25,8 @@ class OsmDiffParser():
         self.nodes = {}
         self.ways = {}
         self.parse_to_polygon = ['building']
+        self.min_timestamp = 0
+        self.max_timestamp = 0
 
     def __str__(self):
         result = 'OsmDiffParser[nodes: %s, ways: %s]' % (len(self.nodes), len(self.ways))
@@ -35,14 +37,21 @@ class OsmDiffParser():
         self.ways = {}
 
     def reset_time_range(self):
-        ts = time.mktime(time.strptime(next(iter(self.ways))['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-        self.min_timestamp = ts
-        self.max_timestamp = ts
         if len(self.ways) > 0:
+            print(self.ways[next(iter(self.ways))]['timestamp'])
+            print(self.__get_time(self.ways[next(iter(self.ways))]['timestamp']))
+            ts = self.__get_time(self.ways[next(iter(self.ways))]['timestamp'])
+            self.min_timestamp = ts
+            self.max_timestamp = ts
             for key in self.ways:
-                ts = time.mktime(time.strptime(self.ways[key]['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+                ts = self.__get_time(self.ways[key]['timestamp'])
                 self.min_timestamp = min(self.min_timestamp, ts)
-                self.max_timestamp = min(self.min_timestamp, ts)
+                self.max_timestamp = max(self.min_timestamp, ts)
+
+
+    def __get_time(self, s):
+        osm_time_format = '%Y-%m-%dT%H:%M:%SZ'
+        return time.strptime(s, osm_time_format) 
 
 
     def read(self, filename):
@@ -114,7 +123,6 @@ class OsmDiffParser():
 
 
     def parse_way(self, way):
-        #<node id="1703119312" lat="18.0242059" lon="-63.0808480" version="2" timestamp="2015-04-15T06:31:13Z" changeset="30228200" uid="402624" user="bdiscoe"/>
         result = {}
 
         try:
@@ -122,7 +130,7 @@ class OsmDiffParser():
             result['timestamp'] = way.attrib['timestamp']
             result['user'] = way.attrib['user']
         except:
-            print('Invalid way')
+            # something is really wrong
             return None
 
         p = True
@@ -136,9 +144,8 @@ class OsmDiffParser():
             except: 
                 try:
                     if p:
-                        print('I should never get here')
                         p = False
-                    # if node exists in file, get lat lon from it
+                    # if node exists in osm file, get lat lon from it
                     points.append('%s %s' % (self.nodes[ndid]['lon'], self.nodes[ndid]['lat']))
                 except:
                     # geometry is not available :(
