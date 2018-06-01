@@ -22,9 +22,10 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime, QVariant
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QFileDialog
 from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, \
     QgsVectorLayer, QgsField, QgsProject, QgsFeature, QgsGeometry
+from qgis.gui import QgsFileWidget
 # Initialize Qt resources from file resources.py
 from .resources import *
 
@@ -32,6 +33,7 @@ from .resources import *
 from .aniosm_dockwidget import AnimateOsmDockWidget
 import os.path
 from math import floor, ceil
+import time
 
 from .osm_diff import OsmDiffParser
 
@@ -81,6 +83,10 @@ class AnimateOsm:
 
         self.do_log = True
         self.polygon_layer = None
+
+        self.open_file_dialog = QFileDialog()
+        #self.open_file_dialog.setFileMode('ExistingFile')
+        self.open_file_dialog.setDirectory('/home/raymond/git/animateOsm/plugin/AnimateOsm/data')
 
 
     # noinspection PyMethodMayBeStatic
@@ -262,7 +268,8 @@ class AnimateOsm:
 
 
             # connections
-            self.dockwidget.pushButton_load.clicked.connect(self.load_layers)
+            self.dockwidget.pushButton_open_file.clicked.connect(self.select_and_open_file)
+            self.dockwidget.pushButton_download.clicked.connect(self.load_layers)
             
             self.dockwidget.dateTimeEdit_start.dateTimeChanged.connect(self.update_interval)
             self.dockwidget.dateTimeEdit_end.dateTimeChanged.connect(self.update_interval)
@@ -273,6 +280,63 @@ class AnimateOsm:
             self.update_interval()
 
 
+    def select_and_open_file(self):
+        #Opens the file dialog to pick a file to open
+        file_name = self.open_file_dialog.getOpenFileName(caption = "Open osm diff file", filter = '*.osm')
+        self.log(file_name[0])
+        self.open_file(file_name[0], update_extents=True)
+        #self.dlg.gmlFileNameBox.setText(fileName)
+
+        self.dockwidget.dateTimeEdit_start.setDateTime(self.__get_qdatetime(self.parser.min_timestamp))
+        self.dockwidget.dateTimeEdit_end.setDateTime(self.__get_qdatetime(self.parser.max_timestamp))
+        self.update_slider()
+
+
+    def __get_qdatetime(self, py_datetime):
+        epoch = time.mktime(py_datetime)
+        self.log(epoch)
+        result = QDateTime.fromMSecsSinceEpoch(epoch * 1000)
+        self.log(result)
+        return result
+
+
+    
+
+    def open_file(self, file_name, update_extents=False):
+        self.create_memory_layer()
+
+        self.parser = OsmDiffParser()
+        #parser.read(os.path.join(self.plugin_dir, 'data', 'diff.osm'))
+        self.parser.read(file_name)
+        self.log(self.parser)
+
+        for way in self.parser.ways:
+            self.add_polygon(self.parser.ways[way])
+        self.polygon_layer.updateExtents()
+
+        if update_extents:
+            # only when loading  layer from file
+            map_extent = self.polygon_layer.extent()
+
+            map_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
+            wgs84_crs = QgsCoordinateReferenceSystem().fromEpsgId(4326)
+
+            # transform if not wgs84
+            if not map_crs == wgs84_crs:
+                transform = QgsCoordinateTransform(wgs84_crs, map_crs, QgsProject.instance())
+                zoom_extent = transform.transformBoundingBox(map_extent)
+
+            self.iface.mapCanvas().setExtent(zoom_extent)
+            
+        self.iface.mapCanvas().refreshAllLayers()
+
+        self.parser.reset_time_range()
+        self.log(self.parser.min_timestamp)
+        self.log(self.parser.max_timestamp)
+
+        # TODO: create polygon and linestring layers, or even buildings, roads etc...
+
+
     def load_layers(self):
         self.log(u'start loading layers ...')
         overpass_query = self.get_overpass_query()
@@ -280,25 +344,6 @@ class AnimateOsm:
 
         # TODO: download data and store as data/diff.osm
 
-        # TODO: create polygon and linestring layers, or even buildings, roads etc...
-        self.create_memory_layer()
-
-        parser = OsmDiffParser()
-        parser.read(os.path.join(self.plugin_dir, 'data', 'diff.osm'))
-        self.log(parser)
-
-        for way in parser.ways:
-            self.add_polygon(parser.ways[way])
-        self.polygon_layer.updateExtents()
-
-        self.iface.mapCanvas().refreshAllLayers()
-
-
-        #self.calculate_frame_age(self.polygon_layer, 1505481016000, 3600000)
-        #self.dockwidget.horizontalSlider_frames.setValue(self.dockwidget.horizontalSlider_frames.maximum())
-        self.update_slider()
-
-        #parser.get_time_range()
 
 
 

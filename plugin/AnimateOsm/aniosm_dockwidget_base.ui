@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
-    <height>255</height>
+    <width>407</width>
+    <height>424</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,11 +18,38 @@
     <property name="fieldGrowthPolicy">
      <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
     </property>
+    <item row="0" column="1">
+     <widget class="QPushButton" name="pushButton_open_file">
+      <property name="text">
+       <string>Open data</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="0">
      <widget class="QDateTimeEdit" name="dateTimeEdit_start"/>
     </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="label_animation_start">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
     <item row="3" column="0">
      <widget class="QDateTimeEdit" name="dateTimeEdit_end"/>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLabel" name="label_animation_end">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
     </item>
     <item row="4" column="0">
      <widget class="QSpinBox" name="spinBox_interval">
@@ -31,13 +58,6 @@
       </property>
       <property name="maximum">
        <number>4</number>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="1">
-     <widget class="QPushButton" name="pushButton_load">
-      <property name="text">
-       <string>Load data</string>
       </property>
      </widget>
     </item>
@@ -51,23 +71,10 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="1">
-     <widget class="QLabel" name="label_animation_end">
+    <item row="5" column="1">
+     <widget class="QPushButton" name="pushButton_download">
       <property name="text">
-       <string>TextLabel</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QLabel" name="label_animation_start">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       <string>Download data</string>
       </property>
      </widget>
     </item>
@@ -85,6 +92,13 @@
       </property>
       <property name="alignment">
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="1">
+     <widget class="QPushButton" name="pushButton_export">
+      <property name="text">
+       <string>Export images</string>
       </property>
      </widget>
     </item>
