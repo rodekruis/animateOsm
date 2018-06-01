@@ -5,4 +5,5 @@ plugin/AnimateOsm/scripts/compile-strings.sh
 plugin/plugin
 *.qgs
 *.qgd
+plugin/AnimateOsm/data/*.osm
 
