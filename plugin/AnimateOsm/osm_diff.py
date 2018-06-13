@@ -1,6 +1,9 @@
 #import urllib2
 import xml.etree.ElementTree as ET
 import time
+import urllib.parse
+
+from .networkaccessmanager import NetworkAccessManager
 
 
 '''
@@ -15,9 +18,43 @@ import time
 out meta geom;
 '''
 
-def download_osm_diff(query, url=r'https://overpass-turbo.eu/', filename='data/diff.osm'):
-    pass
+def download_osm_diff(self, query, url=r'https://overpass-turbo.eu/', filename='data/diff.osm'):
+    self.log(u'download_osm_diff')
     
+    '''
+    query = b'[out:xml][timeout:25][diff:"2018-06-06T13:00:00Z","2018-06-13T14:00:00Z"];(\
+             node["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
+             way["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
+             relation["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
+             );\
+             (._;>;);\
+             out meta geom;'
+    '''
+    
+    overpass_url = 'https://overpass-api.de/api/interpreter'
+
+    headers = {b'Content-type': b'application/osm3s+xml'}
+
+    filename = '/home/raymond/git/animateOsm/plugin/AnimateOsm/data/diff2.osm'
+
+    self.log(query)
+    self.log(overpass_url)
+    self.log(headers)
+
+    nam = NetworkAccessManager()
+
+    #query_fn = '/home/raymond/git/animateOsm/plugin/AnimateOsm/query.txt'
+    #query_file = open(query_fn, 'r')
+
+    (response, content) = nam.request(overpass_url, method='POST', headers=headers, body=query)
+    #self.log(response)
+    self.log(content)
+    osm_file = open(filename, 'w')
+    osm_file.write(content.decode("utf-8"))
+    osm_file.close()
+    #query_file.close()
+
+
 
 class OsmDiffParser():
 

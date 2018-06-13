@@ -35,7 +35,8 @@ import os.path
 from math import floor, ceil
 import time
 
-from .osm_diff import OsmDiffParser
+from .osm_diff import OsmDiffParser, download_osm_diff
+
 
 
 class AnimateOsm:
@@ -256,20 +257,20 @@ class AnimateOsm:
             self.dockwidget.show()
  
             # set default datetimes
-            #self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-7))
-            #self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
+            self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-7))
+            self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
             # for testing 08-09-17 19:57
-            test_start_date = QDateTime.fromMSecsSinceEpoch(1504592079000)
-            test_end_date = QDateTime.fromMSecsSinceEpoch(1507918747000)
+            #test_start_date = QDateTime.fromMSecsSinceEpoch(1504592079000)
+            #test_end_date = QDateTime.fromMSecsSinceEpoch(1507918747000)
 
             #test_end_date = QDateTime.fromString('08-09-17 19:57',self.dockwidget.dateTimeEdit_end.displayFormat())
-            self.dockwidget.dateTimeEdit_start.setDateTime(test_start_date)
-            self.dockwidget.dateTimeEdit_end.setDateTime(test_end_date)
+            #self.dockwidget.dateTimeEdit_start.setDateTime(test_start_date)
+            #self.dockwidget.dateTimeEdit_end.setDateTime(test_end_date)
 
 
             # connections
             self.dockwidget.pushButton_open_file.clicked.connect(self.select_and_open_file)
-            self.dockwidget.pushButton_download.clicked.connect(self.load_layers)
+            self.dockwidget.pushButton_download.clicked.connect(self.download_and_open_file)
             
             self.dockwidget.dateTimeEdit_start.dateTimeChanged.connect(self.update_interval)
             self.dockwidget.dateTimeEdit_end.dateTimeChanged.connect(self.update_interval)
@@ -287,9 +288,28 @@ class AnimateOsm:
         self.open_file(file_name[0], update_extents=True)
         #self.dlg.gmlFileNameBox.setText(fileName)
 
+        if len(self.parser.ways) == 0:
+            self.log('No ways')
+            return
+        
         self.dockwidget.dateTimeEdit_start.setDateTime(self.__get_qdatetime(self.parser.min_timestamp))
         self.dockwidget.dateTimeEdit_end.setDateTime(self.__get_qdatetime(self.parser.max_timestamp))
         self.update_slider()
+
+
+
+    def download_and_open_file(self):
+        #Downloads the osm diff and opens the layer(s)
+
+        overpass_query = self.get_overpass_query()
+        self.log(overpass_query)
+
+        #encode to bytes
+        overpass_query = overpass_query.encode()
+
+        download_osm_diff(self, overpass_query)
+
+
 
 
     def __get_qdatetime(self, py_datetime):
@@ -310,6 +330,10 @@ class AnimateOsm:
         self.parser.read(file_name)
         self.log(self.parser)
 
+        if len(self.parser.ways) == 0:
+            self.log('no ways in file')
+            return
+
         for way in self.parser.ways:
             self.add_polygon(self.parser.ways[way])
         self.polygon_layer.updateExtents()
@@ -327,7 +351,7 @@ class AnimateOsm:
                 zoom_extent = transform.transformBoundingBox(map_extent)
 
             self.iface.mapCanvas().setExtent(zoom_extent)
-            
+
         self.iface.mapCanvas().refreshAllLayers()
 
         self.parser.reset_time_range()
@@ -339,9 +363,8 @@ class AnimateOsm:
 
     def load_layers(self):
         self.log(u'start loading layers ...')
-        overpass_query = self.get_overpass_query()
-        self.log(overpass_query)
 
+        
         # TODO: download data and store as data/diff.osm
 
 
@@ -375,8 +398,6 @@ class AnimateOsm:
 
 
  
-    def get_osm_data(self):
-        pass
 
 
     def get_overpass_query(self):
@@ -398,13 +419,13 @@ class AnimateOsm:
         end_time = self.animation_end_time.toString('yyyy-MM-ddThh:mm:ssZ')
         bbox = self.get_overpass_bbox()
 
-        result = '[out:xml][timeout:25]\n'
-        result += '[diff:"%s","%s"];\n' % (start_time, end_time)
-        result += '(\n'
-        result += 'node["building"]%s;\n' % (bbox)
-        result += 'way["building"]%s;\n' % (bbox)
-        result += 'relation["building"]%s;\n' % (bbox)
-        result += ');\n(._;>;);\nout meta geom;\n'
+        result = u'[out:xml][timeout:25]\n'
+        result += u'[diff:"%s","%s"];\n' % (start_time, end_time)
+        result += u'(\n'
+        result += u'node["building"]%s;\n' % (bbox)
+        result += u'way["building"]%s;\n' % (bbox)
+        result += u'relation["building"]%s;\n' % (bbox)
+        result += u');\n(._;>;);\nout meta geom;\n'
 
         return result
 
@@ -421,7 +442,7 @@ class AnimateOsm:
             transform = QgsCoordinateTransform(map_crs, wgs84_crs, QgsProject.instance())
             extent = transform.transformBoundingBox(extent)
 
-        result = '(%s, %s, %s, %s)' % (
+        result = u'(%s, %s, %s, %s)' % (
             round(extent.yMinimum(), 8),
             round(extent.xMinimum(), 8),
             round(extent.yMaximum(), 8),
