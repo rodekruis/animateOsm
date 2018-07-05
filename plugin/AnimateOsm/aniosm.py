@@ -22,7 +22,7 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime, QVariant
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QFileDialog
+from PyQt5.QtWidgets import QAction, QFileDialog, QProgressBar
 from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, \
     QgsVectorLayer, QgsField, QgsProject, QgsFeature, QgsGeometry
 from qgis.gui import QgsFileWidget
@@ -86,8 +86,9 @@ class AnimateOsm:
         self.polygon_layer = None
 
         self.open_file_dialog = QFileDialog()
-        #self.open_file_dialog.setFileMode('ExistingFile')
         self.open_file_dialog.setDirectory('/home/raymond/git/animateOsm/plugin/AnimateOsm/data')
+        self.choose_dir_dialog = QFileDialog()
+        self.choose_dir_dialog.setDirectory('/home/raymond/tmp/osmani')
 
 
     # noinspection PyMethodMayBeStatic
@@ -274,9 +275,11 @@ class AnimateOsm:
             
             self.dockwidget.dateTimeEdit_start.dateTimeChanged.connect(self.update_interval)
             self.dockwidget.dateTimeEdit_end.dateTimeChanged.connect(self.update_interval)
-            self.dockwidget.spinBox_interval.valueChanged.connect(self.update_interval)
+            self.dockwidget.spinBox_duration.valueChanged.connect(self.update_interval)
 
             self.dockwidget.horizontalSlider_frames.valueChanged.connect(self.update_slider)
+
+            self.dockwidget.toolButton_choose_output_dir.clicked.connect(self.update_select_output_dir)
 
             self.update_interval()
 
@@ -285,8 +288,9 @@ class AnimateOsm:
         #Opens the file dialog to pick a file to open
         file_name = self.open_file_dialog.getOpenFileName(caption = "Open osm diff file", filter = '*.osm')
         self.log(file_name[0])
+        if not os.path.isfile(file_name[0]):
+            return
         self.open_file(file_name[0], update_extents=True)
-        #self.dlg.gmlFileNameBox.setText(fileName)
 
         if len(self.parser.ways) == 0:
             self.log('No ways')
@@ -301,15 +305,27 @@ class AnimateOsm:
     def download_and_open_file(self):
         #Downloads the osm diff and opens the layer(s)
 
+        # todo: Make more dynamic filename
+        file_name = '/home/raymond/git/animateOsm/plugin/AnimateOsm/data/diff2.osm'
+
         overpass_query = self.get_overpass_query()
         self.log(overpass_query)
+
+        self.show_progress()
 
         #encode to bytes
         overpass_query = overpass_query.encode()
 
-        download_osm_diff(self, overpass_query)
+        download_osm_diff(self, overpass_query, file_name)
 
+        self.open_file(file_name, update_extents=True)
 
+        self.iface.messageBar().clearWidgets()
+
+    def update_select_output_dir(self):
+        # opens a file selector
+        file_name = self.choose_dir_dialog.getExistingDirectory(caption = "Choose output directory")#, QFileDialog.ShowDirsOnly)
+        self.dockwidget.lineEdit_output_dir.setText(file_name)
 
 
     def __get_qdatetime(self, py_datetime):
@@ -374,7 +390,7 @@ class AnimateOsm:
 
 
     def update_interval(self):
-        self.interval_msecs = self.dockwidget.spinBox_interval.value() * 3600000
+        self.interval_msecs = self.dockwidget.spinBox_duration.value() * 3600000
         
         start_time_msecs = self.dockwidget.dateTimeEdit_start.dateTime().toMSecsSinceEpoch()
         animation_start_time_msecs = floor(start_time_msecs / self.interval_msecs) * self.interval_msecs
@@ -404,22 +420,21 @@ class AnimateOsm:
 
         #Example Overpass Turbo query:
         '''
-        [out:xml][timeout:25]
-        [diff:"2018-03-16T15:00:00Z","2018-04-16T15:00:00Z"];
-        (
-          node["building"](17.99979487484851,-63.15679550170898,18.126112640728326,-62.99491882324219);
-          way["building"](17.99979487484851,-63.15679550170898,18.126112640728326,-62.99491882324219);
-          relation["building"](17.99979487484851,-63.15679550170898,18.126112640728326,-62.99491882324219);
-          );
-        (._;>;);
-        out meta geom;
+        q[out:xml][timeout:25]
+        [diff:"2018-06-06T13:00:00Z","2018-06-13T14:00:00Z"];(\
+            node["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
+            way["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
+            relation["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
+            );\
+        (._;>;);\
+        out meta geom;'
         '''
 
         start_time = self.animation_start_time.toString('yyyy-MM-ddThh:mm:ssZ')
         end_time = self.animation_end_time.toString('yyyy-MM-ddThh:mm:ssZ')
         bbox = self.get_overpass_bbox()
 
-        result = u'[out:xml][timeout:25]\n'
+        result = u'[out:xml][timeout:60]\n'
         result += u'[diff:"%s","%s"];\n' % (start_time, end_time)
         result += u'(\n'
         result += u'node["building"]%s;\n' % (bbox)
@@ -527,3 +542,62 @@ class AnimateOsm:
             #self.log('updating')
             self.calculate_frame_age(self.polygon_layer, frame_epoch, self.interval_msecs)
             self.iface.mapCanvas().refreshAllLayers()
+    
+    def show_progress(self):
+        progressMessageBar = self.iface.messageBar().createMessage("Getting OSM data")
+        progress = QProgressBar()
+        progress.setMaximum(0)
+        progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        progressMessageBar.layout().addWidget(progress)
+        self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
+
+
+    def renderLabel(self, painter):
+        """Render the current timestamp on the map canvas"""
+        if not self.showLabel or not self.model.hasLayers() or not self.dock.pushButtonToggleTime.isChecked():
+            return
+
+        dt = self.model.getCurrentTimePosition()
+        if dt is None:
+            return
+
+        labelString = self.labelOptions.getLabel(dt)
+
+        # Determine placement of label given cardinal directions
+        flags = 0
+        for direction, flag in ('N', Qt.AlignTop), ('S', Qt.AlignBottom), ('E', Qt.AlignRight), ('W', Qt.AlignLeft):
+            if direction in self.labelOptions.placement:
+                flags |= flag
+
+        # Get canvas dimensions
+        width = painter.device().width()
+        height = painter.device().height()
+
+        painter.setRenderHint(painter.Antialiasing, True)
+        txt = QTextDocument()
+        html = """<span style="background-color:%s; padding: 5px; font-size: %spx;">
+                    <font face="%s" color="%s">%s</font>
+                  </span> """\
+               % (self.labelOptions.bgcolor, self.labelOptions.size, self.labelOptions.font,
+                  self.labelOptions.color, labelString)
+        txt.setHtml(html)
+        layout = txt.documentLayout()
+        size = layout.documentSize()
+
+        if flags & Qt.AlignRight:
+            x = width - 5 - size.width()
+        elif flags & Qt.AlignLeft:
+            x = 5
+        else:
+            x = width / 2 - size.width() / 2
+
+        if flags & Qt.AlignBottom:
+            y = height - 5 - size.height()
+        elif flags & Qt.AlignTop:
+            y = 5
+        else:
+            y = height / 2 - size.height() / 2
+
+        painter.translate(x, y)
+        layout.draw(painter, QAbstractTextDocumentLayout.PaintContext())
+        painter.translate(-x, -y)  # translate back
