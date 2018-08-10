@@ -20,11 +20,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime, QVariant
-from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime, QVariant, QSize
+from PyQt5.QtGui import QIcon, QImage, QColor, QPainter, QPixmap
 from PyQt5.QtWidgets import QAction, QFileDialog, QProgressBar
 from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, \
-    QgsVectorLayer, QgsField, QgsProject, QgsFeature, QgsGeometry
+    QgsVectorLayer, QgsField, QgsProject, QgsFeature, QgsGeometry, QgsMapRendererSequentialJob, QgsMapSettings
 from qgis.gui import QgsFileWidget
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -258,7 +258,7 @@ class AnimateOsm:
             self.dockwidget.show()
  
             # set default datetimes
-            self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-7))
+            self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-40))
             self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
             # for testing 08-09-17 19:57
             #test_start_date = QDateTime.fromMSecsSinceEpoch(1504592079000)
@@ -280,6 +280,7 @@ class AnimateOsm:
             self.dockwidget.horizontalSlider_frames.valueChanged.connect(self.update_slider)
 
             self.dockwidget.toolButton_choose_output_dir.clicked.connect(self.update_select_output_dir)
+            self.dockwidget.pushButton_export.clicked.connect(self.export_frames)
 
             self.update_interval()
 
@@ -364,9 +365,11 @@ class AnimateOsm:
             # transform if not wgs84
             if not map_crs == wgs84_crs:
                 transform = QgsCoordinateTransform(wgs84_crs, map_crs, QgsProject.instance())
-                zoom_extent = transform.transformBoundingBox(map_extent)
+                self.data_zoom_extent = transform.transformBoundingBox(map_extent)
+            else:
+                self.data_zoom_extent = map_extent
 
-            self.iface.mapCanvas().setExtent(zoom_extent)
+            self.iface.mapCanvas().setExtent(self.data_zoom_extent)
 
         self.iface.mapCanvas().refreshAllLayers()
 
@@ -420,7 +423,7 @@ class AnimateOsm:
 
         #Example Overpass Turbo query:
         '''
-        q[out:xml][timeout:25]
+        q[out:xml][timeout:60]
         [diff:"2018-06-06T13:00:00Z","2018-06-13T14:00:00Z"];(\
             node["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
             way["building"](18.02701338, -63.08376483, 18.02811712, -63.08006941);\
@@ -468,6 +471,12 @@ class AnimateOsm:
 
     def create_memory_layer(self, feature_type=u'polygon'):
         layer_name = u'osm_diff_%ss' % (feature_type)
+        
+        # delete existing layers
+        layers = QgsProject.instance().mapLayersByName(layer_name)
+        for layer in layers:
+            QgsProject.instance().removeMapLayer(layer.id())
+
         feature_type += u'?crs=epsg:4326'
         self.polygon_layer = QgsVectorLayer(feature_type, layer_name, 'memory')
         self.polygon_provider = self.polygon_layer.dataProvider()
@@ -601,3 +610,75 @@ class AnimateOsm:
         painter.translate(x, y)
         layout.draw(painter, QAbstractTextDocumentLayout.PaintContext())
         painter.translate(-x, -y)  # translate back
+
+
+    def export_frame(self):
+        settings = QgsMapSettings()
+        settings.setOutputSize(QSize(512,512))
+        settings.setExtent(self.polygon_layer.extent())
+        settings.setLayers([self.polygon_layer])
+
+        job = QgsMapRendererSequentialJob(settings)
+        job.start()
+        job.waitForFinished()
+        img = job.renderedImage()
+        img.save("/tmp/rendered2.png")
+
+
+    def export_frames(self, width=1920, height=1080):
+
+        first_frame = self.dockwidget.horizontalSlider_frames.minimum()
+        last_frame = self.dockwidget.horizontalSlider_frames.maximum()
+        print(u'exporting frames: %s-%s' % (first_frame, last_frame))
+
+        '''
+        # find all visible layers
+        layers = []
+        root = QgsProject.instance().layerTreeRoot()
+        for child in root.children():
+            print(child)
+            print(child.isVisible())
+            if child.isVisible():
+                print(child.layer())
+                layers.append(child.layer())
+        self.log(len(layers))
+        '''
+
+        settings = QgsMapSettings()
+        settings.setDestinationCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs()))
+        settings.setOutputSize(QSize(1920,1080))
+        settings.setLayers(self.iface.mapCanvas().layers())
+        settings.setExtent(self.data_zoom_extent)
+
+        job = QgsMapRendererSequentialJob(settings)
+
+        for frame_id in range(first_frame, last_frame + 1):
+
+            self.dockwidget.horizontalSlider_frames.setValue(frame_id)
+            self.update_slider()
+
+            job.start()
+            job.waitForFinished()
+            img = job.renderedImage()
+            filename = '/tmp/ani/rendered{0}.png'.format(frame_id)
+            self.log(filename)
+            img.save(filename)
+
+
+
+        '''
+        for frame_id in range(first_frame, last_frame + 1):
+            self.dockwidget.horizontalSlider_frames.setValue(frame_id)
+            self.update_slider()
+
+            base_name = u'frame_%s.png' % (self.dockwidget.horizontalSlider_frames.value())
+            file_name = os.path.join(self.dockwidget.lineEdit_output_dir.text(), base_name)
+            self.log(u'exporting!: %s' % (file_name))
+
+            job.start()
+            job.waitForFinished()
+            img = job.renderedImage()
+            self.log(img)
+            img.save("/tmp/ani/rendered.png")
+            self.log(u'done')
+        '''

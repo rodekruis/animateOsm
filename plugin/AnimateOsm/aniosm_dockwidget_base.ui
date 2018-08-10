@@ -14,7 +14,7 @@
    <string>Animate OSM</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -91,7 +91,10 @@
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>24</number>
+        <number>48</number>
+       </property>
+       <property name="value">
+        <number>48</number>
        </property>
       </widget>
      </item>
@@ -129,7 +132,7 @@
      <item row="7" column="0" colspan="2">
       <widget class="QLineEdit" name="lineEdit_output_dir">
        <property name="text">
-        <string>/home/raymond/tmp/osmani</string>
+        <string>/tmp/ani</string>
        </property>
       </widget>
      </item>

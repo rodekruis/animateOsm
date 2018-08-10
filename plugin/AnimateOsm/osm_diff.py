@@ -24,7 +24,7 @@ def download_osm_diff(self, query, filename='data/diff.osm', url=u'https://overp
 
     (response, content) = nam.request(overpass_url, method='POST', headers=headers, body=query)
     self.log(response)
-    self.log(content)
+    #self.log(content)
     osm_file = open(filename, 'w')
     osm_file.write(content.decode("utf-8"))
     osm_file.close()
