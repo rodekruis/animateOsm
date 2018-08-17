@@ -284,14 +284,14 @@ class AnimateOsm:
 
     def select_and_open_file(self):
         #Opens the file dialog to pick a file to open
-        file_name = self.open_file_dialog.getOpenFileName(caption = "Open osm diff file", filter = '*.osm')
+        file_name = self.open_file_dialog.getOpenFileName(caption = u'Open osm diff file', filter = u'*.osm')
         self.log(file_name[0])
         if not os.path.isfile(file_name[0]):
             return
         self.open_file(file_name[0], update_extents=True)
 
         if len(self.parser.ways) == 0:
-            self.log('No ways')
+            self.log(u'No ways')
             return
 
         self.dockwidget.dateTimeEdit_start.setDateTime(self.__get_qdatetime(self.parser.min_timestamp))
@@ -307,14 +307,14 @@ class AnimateOsm:
         overpass_query = self.get_overpass_query()
         self.log(overpass_query)
 
-        self.show_progress()
+        self.show_download_progress()
 
         #encode to bytes
         overpass_query = overpass_query.encode()
 
         download_osm_diff(self, overpass_query, filename)
 
-        self.open_file(file_name, update_extents=True)
+        self.open_file(filename, update_extents=True)
 
         self.iface.messageBar().clearWidgets()
 
@@ -341,7 +341,7 @@ class AnimateOsm:
         self.log(self.parser)
 
         if len(self.parser.ways) == 0:
-            self.log('no ways in file')
+            self.log(u'no ways in file')
             return
 
         for way in self.parser.ways:
@@ -452,15 +452,15 @@ class AnimateOsm:
             QgsProject.instance().removeMapLayer(layer.id())
 
         feature_type += u'?crs=epsg:4326'
-        self.polygon_layer = QgsVectorLayer(feature_type, layer_name, 'memory')
+        self.polygon_layer = QgsVectorLayer(feature_type, layer_name, u'memory')
         self.polygon_provider = self.polygon_layer.dataProvider()
 
-        osm_id_field = QgsField("osm_id", QVariant.LongLong, 'int8')
-        user_field = QgsField("user", QVariant.String)
+        osm_id_field = QgsField(u'osm_id', QVariant.LongLong, 'int8')
+        user_field = QgsField(u'user', QVariant.String)
         user_field.setLength(80)
-        timestamp_field = QgsField("timestamp", QVariant.DateTime)
-        epoch_field = QgsField("epoch", QVariant.LongLong, 'int8')
-        age_field = QgsField("frame_age", QVariant.Int)
+        timestamp_field = QgsField(u'timestamp', QVariant.DateTime)
+        epoch_field = QgsField(u'epoch', QVariant.LongLong, 'int8')
+        age_field = QgsField(u'frame_age', QVariant.Int)
 
         self.polygon_provider.addAttributes([osm_id_field, user_field, timestamp_field, epoch_field, age_field])
         self.polygon_layer.updateFields()
@@ -468,7 +468,7 @@ class AnimateOsm:
         QgsProject.instance().addMapLayer(self.polygon_layer)
 
         # TODO: create pick list for choosing qml
-        polygonQml = os.path.join(self.plugin_dir,'data','ani_osm_polygon_pink.qml')
+        polygonQml = os.path.join(self.data_dir, u'ani_osm_polygon_pink.qml')
         self.polygon_layer.loadNamedStyle(polygonQml)
         #self.layer_group.insertLayer(0, self.osm_diff_polygon_layer)  # now add to legend in current layer group
 
@@ -527,7 +527,7 @@ class AnimateOsm:
 
 
     def show_download_progress(self):
-        progressMessageBar = self.iface.messageBar().createMessage("Requesting online OSM data")
+        progressMessageBar = self.iface.messageBar().createMessage(u'Requesting online OSM data')
         progress = QProgressBar()
         progress.setMaximum(0)
         progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)

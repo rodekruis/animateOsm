@@ -6,13 +6,13 @@ import urllib.parse
 from .networkaccessmanager import NetworkAccessManager
 
 
-def download_osm_diff(self, query, filename='data/diff.osm', url=u'https://overpass-turbo.eu/'):
+def download_osm_diff(self, query, filename, url=u'https://lz4.overpass-api.de/api/interpreter/'):
     self.log(u'download_osm_diff')
     
     #overpass_url = 'https://overpass-api.de/api/interpreter'
-    #overpass_url = 'https://overpass-turbo.eu'
+    #overpass_url = 'https://overpass-turbo.eu/'
     #overpass_url = 'https://lz4.overpass-api.de/api/interpreter'
-    #overpass_url = url
+    overpass_url = url
 
     headers = {b'Content-type': b'application/osm3s+xml'}
 
@@ -24,7 +24,7 @@ def download_osm_diff(self, query, filename='data/diff.osm', url=u'https://overp
 
     (response, content) = nam.request(overpass_url, method='POST', headers=headers, body=query)
     self.log(response)
-    #self.log(content)
+    self.log(content)
     osm_file = open(filename, 'w')
     osm_file.write(content.decode("utf-8"))
     osm_file.close()
