@@ -50,8 +50,8 @@ class OsmDiffParser():
 
     def reset_time_range(self):
         if len(self.ways) > 0:
-            print(self.ways[next(iter(self.ways))]['timestamp'])
-            print(self.__get_time(self.ways[next(iter(self.ways))]['timestamp']))
+            #print(self.ways[next(iter(self.ways))]['timestamp'])
+            #print(self.__get_time(self.ways[next(iter(self.ways))]['timestamp']))
             ts = self.__get_time(self.ways[next(iter(self.ways))]['timestamp'])
             self.min_timestamp = ts
             self.max_timestamp = ts
@@ -107,18 +107,18 @@ class OsmDiffParser():
                                 self.ways[way['osm_id']] = way
             else:
                 other_cnt += 1
-                print('other action type!')
+                #print('other action type!')
 
 
         
-        print('action_cnt: %s' % action_cnt)
-        print('delete_cnt: %s' % delete_cnt)
-        print('modify_cnt: %s' % modify_cnt)
-        print('create_cnt: %s' % create_cnt)
-        print('other_cnt: %s' % other_cnt)
+        #print('action_cnt: %s' % action_cnt)
+        #print('delete_cnt: %s' % delete_cnt)
+        #print('modify_cnt: %s' % modify_cnt)
+        #print('create_cnt: %s' % create_cnt)
+        #print('other_cnt: %s' % other_cnt)
 
-        print(len(self.nodes))
-        print(len(self.ways))
+        #print(len(self.nodes))
+        #print(len(self.ways))
 
 
         

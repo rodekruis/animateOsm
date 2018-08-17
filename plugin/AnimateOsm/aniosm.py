@@ -328,6 +328,13 @@ class AnimateOsm:
         self.output_dir = file_name
 
 
+    def clear_output_dir(self):
+        frame_files = os.listdir(self.output_dir)
+        for frame_file in frame_files:
+            if not frame_file == u'.keep':
+                os.remove(os.path.join(self.output_dir, frame_file))
+
+
     def __get_qdatetime(self, py_datetime):
         epoch = time.mktime(py_datetime)
         self.log(epoch)
@@ -620,6 +627,8 @@ class AnimateOsm:
         progressMessageBar = self.iface.messageBar().createMessage(u'Rendering frames')
         progressMessageBar.layout().addWidget(progress)
         self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info, duration=2)
+
+        self.clear_output_dir()
 
         for frame_id in range(first_frame, last_frame + 1):
 
