@@ -5,4 +5,5 @@ plugin/plugin
 *.qgs
 *.qgd
 plugin/AnimateOsm/data/*.osm
+plugin/AnimateOsm/output/*.png
 

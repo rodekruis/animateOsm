@@ -553,12 +553,12 @@ class AnimateOsm:
             self.iface.mapCanvas().refreshAllLayers()
     
     def show_progress(self):
-        progressMessageBar = self.iface.messageBar().createMessage("Getting OSM data")
+        progressMessageBar = self.iface.messageBar().createMessage("Requesting online OSM data")
         progress = QProgressBar()
         progress.setMaximum(0)
         progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
         progressMessageBar.layout().addWidget(progress)
-        self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
+        self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info, duration=2)
 
 
     def renderLabel(self, painter):
@@ -629,29 +629,26 @@ class AnimateOsm:
 
         first_frame = self.dockwidget.horizontalSlider_frames.minimum()
         last_frame = self.dockwidget.horizontalSlider_frames.maximum()
-        print(u'exporting frames: %s-%s' % (first_frame, last_frame))
+        print(u'Rendering frames: %s-%s' % (first_frame, last_frame))
 
-        '''
-        # find all visible layers
-        layers = []
-        root = QgsProject.instance().layerTreeRoot()
-        for child in root.children():
-            print(child)
-            print(child.isVisible())
-            if child.isVisible():
-                print(child.layer())
-                layers.append(child.layer())
-        self.log(len(layers))
-        '''
+        frame_width = self.dockwidget.spinBox_frame_width.value()
+        frame_height = self.dockwidget.spinBox_frame_height.value()
 
         settings = QgsMapSettings()
         settings.setDestinationCrs(QgsCoordinateReferenceSystem(self.iface.mapCanvas().mapSettings().destinationCrs()))
-        settings.setOutputSize(QSize(1920,1080))
+        settings.setOutputSize(QSize(frame_width, frame_height))
         settings.setLayers(self.iface.mapCanvas().layers())
         settings.setExtent(self.data_zoom_extent)
 
         job = QgsMapRendererSequentialJob(settings)
 
+        progress = QProgressBar()
+        progress.setMaximum(last_frame)
+        progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        progressMessageBar = self.iface.messageBar().createMessage(u'Rendering frames')
+        progressMessageBar.layout().addWidget(progress)
+        self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info, duration=2)
+
         for frame_id in range(first_frame, last_frame + 1):
 
             self.dockwidget.horizontalSlider_frames.setValue(frame_id)
@@ -660,25 +657,8 @@ class AnimateOsm:
             job.start()
             job.waitForFinished()
             img = job.renderedImage()
-            filename = '/tmp/ani/rendered{0}.png'.format(frame_id)
+            base_name = u'frame_{0}.png'.format(frame_id)
+            filename = os.path.join(self.plugin_dir, u'output', base_name)
             self.log(filename)
             img.save(filename)
-
-
-
-        '''
-        for frame_id in range(first_frame, last_frame + 1):
-            self.dockwidget.horizontalSlider_frames.setValue(frame_id)
-            self.update_slider()
-
-            base_name = u'frame_%s.png' % (self.dockwidget.horizontalSlider_frames.value())
-            file_name = os.path.join(self.dockwidget.lineEdit_output_dir.text(), base_name)
-            self.log(u'exporting!: %s' % (file_name))
-
-            job.start()
-            job.waitForFinished()
-            img = job.renderedImage()
-            self.log(img)
-            img.save("/tmp/ani/rendered.png")
-            self.log(u'done')
-        '''
+            progress.setValue(frame_id)

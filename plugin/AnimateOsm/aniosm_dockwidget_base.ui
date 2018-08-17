@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>417</width>
-    <height>387</height>
+    <height>435</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
       <x>10</x>
       <y>10</y>
       <width>401</width>
-      <height>340</height>
+      <height>382</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
@@ -78,7 +78,7 @@
        </property>
       </widget>
      </item>
-     <item row="8" column="2">
+     <item row="10" column="2">
       <widget class="QPushButton" name="pushButton_export">
        <property name="text">
         <string>Export images</string>
@@ -129,13 +129,6 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="0" colspan="2">
-      <widget class="QLineEdit" name="lineEdit_output_dir">
-       <property name="text">
-        <string>/tmp/ani</string>
-       </property>
-      </widget>
-     </item>
      <item row="6" column="1" colspan="2">
       <widget class="QLabel" name="label_actual_frame">
        <property name="text">
@@ -143,6 +136,53 @@
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0" colspan="2">
+      <widget class="QLineEdit" name="lineEdit_output_dir">
+       <property name="text">
+        <string>/tmp/ani</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_frame_width">
+       <property name="text">
+        <string>Frame width (px):</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="0">
+      <widget class="QLabel" name="label_frame_height">
+       <property name="text">
+        <string>Frame height (px):</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <widget class="QSpinBox" name="spinBox_frame_width">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>4096</number>
+       </property>
+       <property name="value">
+        <number>1920</number>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="1">
+      <widget class="QSpinBox" name="spinBox_frame_height">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>3072</number>
+       </property>
+       <property name="value">
+        <number>1080</number>
        </property>
       </widget>
      </item>
