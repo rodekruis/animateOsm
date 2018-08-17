@@ -83,14 +83,14 @@ class AnimateOsm:
         self.pluginIsActive = False
         self.dockwidget = None
 
-        self.do_log = True
+        self.do_log = False
         self.polygon_layer = None
 
         self.data_dir = os.path.join(self.plugin_dir, 'data')
         self.output_dir = os.path.join(self.plugin_dir, 'output')
 
-        self.log(self.data_dir)
-        self.log(self.output_dir)
+        #self.log(self.data_dir)
+        #self.log(self.output_dir)
 
         self.open_file_dialog = QFileDialog()
         self.open_file_dialog.setDirectory(self.data_dir)
@@ -279,6 +279,8 @@ class AnimateOsm:
 
             self.dockwidget.lineEdit_output_dir.setText(self.output_dir)
 
+            self.dockwidget.pushButton_export.setEnabled(False)
+
             self.set_style_options()
 
             self.update_interval()
@@ -287,7 +289,7 @@ class AnimateOsm:
     def select_and_open_file(self):
         #Opens the file dialog to pick a file to open
         file_name = self.open_file_dialog.getOpenFileName(caption = u'Open osm diff file', filter = u'*.osm')
-        self.log(file_name[0])
+        #self.log(file_name[0])
         if not os.path.isfile(file_name[0]):
             return
         self.open_file(file_name[0], update_extents=True)
@@ -351,7 +353,8 @@ class AnimateOsm:
         self.log(self.parser)
 
         if len(self.parser.ways) == 0:
-            self.log(u'no ways in file')
+            iface.messageBar().pushMessage("Info", "No data in OSM file", level=Qgis.Info)
+            self.dockwidget.pushButton_export.setEnabled(False)
             return
 
         for way in self.parser.ways:
@@ -379,6 +382,8 @@ class AnimateOsm:
         self.parser.reset_time_range()
         self.log(self.parser.min_timestamp)
         self.log(self.parser.max_timestamp)
+        self.dockwidget.pushButton_export.setEnabled(True)
+
 
         # TODO: create polygon and linestring layers, or even buildings, roads etc...
 
@@ -408,7 +413,7 @@ class AnimateOsm:
     def set_style_options(self):
         for file in os.listdir(self.data_dir):
             if file.endswith('.%s' % u'qml'):
-                print(file)
+                #print(file)
                 self.dockwidget.comboBox_style.addItem(file)
 
 
@@ -608,7 +613,7 @@ class AnimateOsm:
 
         first_frame = self.dockwidget.horizontalSlider_frames.minimum()
         last_frame = self.dockwidget.horizontalSlider_frames.maximum()
-        print(u'Rendering frames: %s-%s' % (first_frame, last_frame))
+        #print(u'Rendering frames: %s-%s' % (first_frame, last_frame))
 
         frame_width = self.dockwidget.spinBox_frame_width.value()
         frame_height = self.dockwidget.spinBox_frame_height.value()

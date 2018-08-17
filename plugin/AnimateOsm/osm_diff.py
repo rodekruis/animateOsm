@@ -1,4 +1,26 @@
-#import urllib2
+# -*- coding: utf-8 -*-
+"""
+/***************************************************************************
+ AnimateOsm
+                                 A QGIS plugin
+ Animates OSM changes within a time and bounding box.
+                              -------------------
+        begin                : 2017-09-05
+        git sha              : $Format:%H$
+        copyright            : (C) 2017 by Netherlands Red Cross
+        email                : rnijssen@rodekruis.nl
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
 import xml.etree.ElementTree as ET
 import time
 import urllib.parse
