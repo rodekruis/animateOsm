@@ -9,15 +9,15 @@
 [general]
 name=Animate OSM
 qgisMinimumVersion=3.0
-description=Animates OSM changes within a time and bounding box.
+description=Animates OSM changes within a time frame and bounding box. This plugin has been developed for creating visualizations of work processed in hotosm.org tasks. Currently it only supports buildings.
 version=0.1
-author=Netherlands Red Cross
+author=Netherlands Red Cross / 510
 email=rnijssen@rodekruis.nl
 
-about=Animates OSM changes within a time and bounding box.
+about=Animates OSM changes within a time frame and bounding box.
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://github.com/rodekruis/animateOsm/issues
+repository=https://github.com/rodekruis/animateOsm
 # End of mandatory metadata
 
 # Recommended items:
@@ -28,11 +28,11 @@ repository=http://repo
 # Tags are comma separated with spaces allowed
 tags=animation animate osm openstreetmap diff missing maps hotosm
 
-homepage=http://homepage
+homepage=http://510.global
 category=Web
 icon=icon.png
 # experimental flag
-experimental=False
+experimental=True
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
