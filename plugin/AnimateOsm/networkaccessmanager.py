@@ -269,20 +269,20 @@ class NetworkAccessManager(object):
 
         return (self.http_call_result, self.http_call_result.content)
 
-    @pyqtSlot()
+    #@pyqtSlot()
     def downloadProgress(self, bytesReceived, bytesTotal):
         """Keep track of the download progress"""
         #self.msg_log("downloadProgress %s of %s ..." % (bytesReceived, bytesTotal))
         pass
 
-    @pyqtSlot()
+    #@pyqtSlot()
     def requestTimedOut(self, reply):
         """Trap the timeout. In Async mode requestTimedOut is called after replyFinished"""
         # adapt http_call_result basing on receiving qgs timer timout signal
         self.exception_class = RequestsExceptionTimeout
         self.http_call_result.exception = RequestsExceptionTimeout("Timeout error")
 
-    @pyqtSlot()
+    #@pyqtSlot()
     def replyFinished(self):
         err = self.reply.error()
         httpStatus = self.reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
@@ -385,7 +385,7 @@ class NetworkAccessManager(object):
         else:
             self.msg_log("Reply was already deleted ...")
 
-    @pyqtSlot()
+    #@pyqtSlot()
     def sslErrors(self, ssl_errors):
         """
         Handle SSL errors, logging them if debug is on and ignoring them
@@ -397,7 +397,7 @@ class NetworkAccessManager(object):
         if self.disable_ssl_certificate_validation:
             self.reply.ignoreSslErrors()
 
-    @pyqtSlot()
+    #@pyqtSlot()
     def abort(self):
         """
         Handle request to cancel HTTP call
