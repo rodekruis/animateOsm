@@ -278,7 +278,7 @@ class AnimateOsm:
             self.dockwidget.pushButton_export.clicked.connect(self.export_frames)
 
             self.dockwidget.lineEdit_output_dir.setText(self.output_dir)
-
+            self.dockwidget.comboBox_style.currentTextChanged.connect(self.set_style)
             self.dockwidget.pushButton_export.setEnabled(False)
 
             self.set_style_options()
@@ -417,6 +417,14 @@ class AnimateOsm:
                 self.dockwidget.comboBox_style.addItem(file)
 
 
+    def set_style(self):
+        qml_base_name = self.dockwidget.comboBox_style.currentText()
+        polygonQml = os.path.join(self.data_dir, qml_base_name)
+        if self.polygon_layer is not None:
+            self.polygon_layer.loadNamedStyle(polygonQml)
+            self.iface.mapCanvas().refreshAllLayers()
+
+
     def get_overpass_query(self):
 
         #Example Overpass Turbo query:
@@ -489,11 +497,7 @@ class AnimateOsm:
 
         QgsProject.instance().addMapLayer(self.polygon_layer)
 
-        # TODO: create pick list for choosing qml
-        qml_base_name = self.dockwidget.comboBox_style.currentText()
-        polygonQml = os.path.join(self.data_dir, qml_base_name)
-        self.polygon_layer.loadNamedStyle(polygonQml)
-        #self.layer_group.insertLayer(0, self.osm_diff_polygon_layer)  # now add to legend in current layer group
+        self.set_style()
 
 
     def add_polygon(self, way):
@@ -648,3 +652,4 @@ class AnimateOsm:
             self.log(filename)
             img.save(filename)
             progress.setValue(frame_id)
+
