@@ -279,6 +279,8 @@ class AnimateOsm:
 
             self.dockwidget.lineEdit_output_dir.setText(self.output_dir)
 
+            self.set_style_options()
+
             self.update_interval()
 
 
@@ -323,6 +325,7 @@ class AnimateOsm:
         # opens a file selector
         file_name = self.choose_dir_dialog.getExistingDirectory(caption = u'Choose output directory') #, QFileDialog.ShowDirsOnly)
         self.dockwidget.lineEdit_output_dir.setText(file_name)
+        self.output_dir = file_name
 
 
     def __get_qdatetime(self, py_datetime):
@@ -393,6 +396,13 @@ class AnimateOsm:
         self.dockwidget.horizontalSlider_frames.setMinimum(1)
         self.dockwidget.horizontalSlider_frames.setMaximum(number_of_frames)
         self.dockwidget.horizontalSlider_frames.setValue(number_of_frames)
+
+
+    def set_style_options(self):
+        for file in os.listdir(self.data_dir):
+            if file.endswith('.%s' % u'qml'):
+                print(file)
+                self.dockwidget.comboBox_style.addItem(file)
 
 
     def get_overpass_query(self):
@@ -468,7 +478,8 @@ class AnimateOsm:
         QgsProject.instance().addMapLayer(self.polygon_layer)
 
         # TODO: create pick list for choosing qml
-        polygonQml = os.path.join(self.data_dir, u'ani_osm_polygon_pink.qml')
+        qml_base_name = self.dockwidget.comboBox_style.currentText()
+        polygonQml = os.path.join(self.data_dir, qml_base_name)
         self.polygon_layer.loadNamedStyle(polygonQml)
         #self.layer_group.insertLayer(0, self.osm_diff_polygon_layer)  # now add to legend in current layer group
 
@@ -532,7 +543,7 @@ class AnimateOsm:
         progress.setMaximum(0)
         progress.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
         progressMessageBar.layout().addWidget(progress)
-        self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info, duration=2)
+        self.iface.messageBar().pushWidget(progressMessageBar, Qgis.Info)
 
 
     def renderLabel(self, painter):
