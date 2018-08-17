@@ -11,7 +11,7 @@ def download_osm_diff(self, query, filename='data/diff.osm', url=u'https://overp
     
     #overpass_url = 'https://overpass-api.de/api/interpreter'
     #overpass_url = 'https://overpass-turbo.eu'
-    overpass_url = 'https://lz4.overpass-api.de/api/interpreter'
+    #overpass_url = 'https://lz4.overpass-api.de/api/interpreter'
     #overpass_url = url
 
     headers = {b'Content-type': b'application/osm3s+xml'}

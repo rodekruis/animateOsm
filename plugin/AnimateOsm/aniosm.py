@@ -39,6 +39,7 @@ from .osm_diff import OsmDiffParser, download_osm_diff
 
 
 
+
 class AnimateOsm:
     """QGIS Plugin Implementation."""
 
@@ -85,10 +86,16 @@ class AnimateOsm:
         self.do_log = True
         self.polygon_layer = None
 
+        self.data_dir = os.path.join(self.plugin_dir, 'data')
+        self.output_dir = os.path.join(self.plugin_dir, 'output')
+
+        self.log(self.data_dir)
+        self.log(self.output_dir)
+
         self.open_file_dialog = QFileDialog()
-        self.open_file_dialog.setDirectory('/home/raymond/git/animateOsm/plugin/AnimateOsm/data')
+        self.open_file_dialog.setDirectory(self.data_dir)
         self.choose_dir_dialog = QFileDialog()
-        self.choose_dir_dialog.setDirectory('/home/raymond/tmp/osmani')
+        self.choose_dir_dialog.setDirectory(self.output_dir)
 
 
     # noinspection PyMethodMayBeStatic
@@ -181,7 +188,6 @@ class AnimateOsm:
         return action
 
 
-
     def log(self, message, tab=u'animate osm'):
         if self.do_log:
             QgsMessageLog.logMessage(str(message), tab, level=Qgis.Info)
@@ -196,7 +202,6 @@ class AnimateOsm:
             text=self.tr(u'Animate OSM'),
             callback=self.run,
             parent=self.iface.mainWindow())
-
 
     #--------------------------------------------------------------------------
 
@@ -250,8 +255,6 @@ class AnimateOsm:
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
-
-
             # show the dockwidget
             # TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -260,14 +263,6 @@ class AnimateOsm:
             # set default datetimes
             self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-40))
             self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
-            # for testing 08-09-17 19:57
-            #test_start_date = QDateTime.fromMSecsSinceEpoch(1504592079000)
-            #test_end_date = QDateTime.fromMSecsSinceEpoch(1507918747000)
-
-            #test_end_date = QDateTime.fromString('08-09-17 19:57',self.dockwidget.dateTimeEdit_end.displayFormat())
-            #self.dockwidget.dateTimeEdit_start.setDateTime(test_start_date)
-            #self.dockwidget.dateTimeEdit_end.setDateTime(test_end_date)
-
 
             # connections
             self.dockwidget.pushButton_open_file.clicked.connect(self.select_and_open_file)
@@ -281,6 +276,8 @@ class AnimateOsm:
 
             self.dockwidget.toolButton_choose_output_dir.clicked.connect(self.update_select_output_dir)
             self.dockwidget.pushButton_export.clicked.connect(self.export_frames)
+
+            self.dockwidget.lineEdit_output_dir.setText(self.output_dir)
 
             self.update_interval()
 
@@ -296,18 +293,16 @@ class AnimateOsm:
         if len(self.parser.ways) == 0:
             self.log('No ways')
             return
-        
+
         self.dockwidget.dateTimeEdit_start.setDateTime(self.__get_qdatetime(self.parser.min_timestamp))
         self.dockwidget.dateTimeEdit_end.setDateTime(self.__get_qdatetime(self.parser.max_timestamp))
         self.update_slider()
 
 
-
     def download_and_open_file(self):
         #Downloads the osm diff and opens the layer(s)
 
-        # todo: Make more dynamic filename
-        file_name = '/home/raymond/git/animateOsm/plugin/AnimateOsm/data/diff2.osm'
+        filename = os.path.join(self.data_dir, u'tmp_diff.osm')
 
         overpass_query = self.get_overpass_query()
         self.log(overpass_query)
@@ -317,15 +312,16 @@ class AnimateOsm:
         #encode to bytes
         overpass_query = overpass_query.encode()
 
-        download_osm_diff(self, overpass_query, file_name)
+        download_osm_diff(self, overpass_query, filename)
 
         self.open_file(file_name, update_extents=True)
 
         self.iface.messageBar().clearWidgets()
 
+
     def update_select_output_dir(self):
         # opens a file selector
-        file_name = self.choose_dir_dialog.getExistingDirectory(caption = "Choose output directory")#, QFileDialog.ShowDirsOnly)
+        file_name = self.choose_dir_dialog.getExistingDirectory(caption = u'Choose output directory') #, QFileDialog.ShowDirsOnly)
         self.dockwidget.lineEdit_output_dir.setText(file_name)
 
 
@@ -337,13 +333,10 @@ class AnimateOsm:
         return result
 
 
-    
-
     def open_file(self, file_name, update_extents=False):
         self.create_memory_layer()
 
         self.parser = OsmDiffParser()
-        #parser.read(os.path.join(self.plugin_dir, 'data', 'diff.osm'))
         self.parser.read(file_name)
         self.log(self.parser)
 
@@ -380,18 +373,6 @@ class AnimateOsm:
         # TODO: create polygon and linestring layers, or even buildings, roads etc...
 
 
-    def load_layers(self):
-        self.log(u'start loading layers ...')
-
-        
-        # TODO: download data and store as data/diff.osm
-
-
-
-
-
-
-
     def update_interval(self):
         self.interval_msecs = self.dockwidget.spinBox_duration.value() * 3600000
         
@@ -412,11 +393,6 @@ class AnimateOsm:
         self.dockwidget.horizontalSlider_frames.setMinimum(1)
         self.dockwidget.horizontalSlider_frames.setMaximum(number_of_frames)
         self.dockwidget.horizontalSlider_frames.setValue(number_of_frames)
-
-
-
-
- 
 
 
     def get_overpass_query(self):
@@ -448,7 +424,6 @@ class AnimateOsm:
         return result
 
 
-
     def get_overpass_bbox(self):
         extent = self.iface.mapCanvas().extent()
 
@@ -466,7 +441,6 @@ class AnimateOsm:
             round(extent.yMaximum(), 8),
             round(extent.xMaximum(), 8))
         return result
-
 
 
     def create_memory_layer(self, feature_type=u'polygon'):
@@ -488,16 +462,15 @@ class AnimateOsm:
         epoch_field = QgsField("epoch", QVariant.LongLong, 'int8')
         age_field = QgsField("frame_age", QVariant.Int)
 
-
         self.polygon_provider.addAttributes([osm_id_field, user_field, timestamp_field, epoch_field, age_field])
         self.polygon_layer.updateFields()
 
         QgsProject.instance().addMapLayer(self.polygon_layer)
 
+        # TODO: create pick list for choosing qml
         polygonQml = os.path.join(self.plugin_dir,'data','ani_osm_polygon_pink.qml')
         self.polygon_layer.loadNamedStyle(polygonQml)
         #self.layer_group.insertLayer(0, self.osm_diff_polygon_layer)  # now add to legend in current layer group
-
 
 
     def add_polygon(self, way):
@@ -516,7 +489,6 @@ class AnimateOsm:
         feat.setAttributes(attributes)
 
         self.polygon_provider.addFeatures([feat])
-
 
 
     def calculate_frame_age(self, layer, frame_epoch, interval):
@@ -546,13 +518,15 @@ class AnimateOsm:
         #self.log('update request')
         self.update_map(frame_epoch)
 
+
     def update_map(self, frame_epoch):
         if self.polygon_layer is not None:
             #self.log('updating')
             self.calculate_frame_age(self.polygon_layer, frame_epoch, self.interval_msecs)
             self.iface.mapCanvas().refreshAllLayers()
-    
-    def show_progress(self):
+
+
+    def show_download_progress(self):
         progressMessageBar = self.iface.messageBar().createMessage("Requesting online OSM data")
         progress = QProgressBar()
         progress.setMaximum(0)
@@ -612,19 +586,6 @@ class AnimateOsm:
         painter.translate(-x, -y)  # translate back
 
 
-    def export_frame(self):
-        settings = QgsMapSettings()
-        settings.setOutputSize(QSize(512,512))
-        settings.setExtent(self.polygon_layer.extent())
-        settings.setLayers([self.polygon_layer])
-
-        job = QgsMapRendererSequentialJob(settings)
-        job.start()
-        job.waitForFinished()
-        img = job.renderedImage()
-        img.save("/tmp/rendered2.png")
-
-
     def export_frames(self, width=1920, height=1080):
 
         first_frame = self.dockwidget.horizontalSlider_frames.minimum()
@@ -658,7 +619,7 @@ class AnimateOsm:
             job.waitForFinished()
             img = job.renderedImage()
             base_name = u'frame_{0}.png'.format(frame_id)
-            filename = os.path.join(self.plugin_dir, u'output', base_name)
+            filename = os.path.join(self.output_dir, base_name)
             self.log(filename)
             img.save(filename)
             progress.setValue(frame_id)
