@@ -38,19 +38,25 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	aniosm.py aniosm_dockwidget.py
+	aniosm.py \
+	aniosm_dockwidget.py
 
 PLUGINNAME = AnimateOsm
 
 PY_FILES = \
 	__init__.py \
-	aniosm.py aniosm_dockwidget.py
+	aniosm.py \
+	aniosm_dockwidget.py \
+	networkaccessmanager.py \
+	osm_diff.py
 
 UI_FILES = aniosm_dockwidget_base.ui
 
-EXTRAS = metadata.txt icon.png
+EXTRAS = metadata.txt icon.png 510_logo_linear_small.png
 
-EXTRA_DIRS =
+EXTRA_DIRS = \
+    output \
+    data
 
 COMPILED_RESOURCE_FILES = resources.py
 
@@ -67,7 +73,8 @@ PLUGIN_UPLOAD = $(c)/plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
-QGISDIR=.qgis2
+#QGISDIR=/.qgis3
+QGISDIR=git/QGIS/build-master/output
 
 default: compile
 
@@ -100,7 +107,7 @@ test: compile transcompile
 deploy: compile doc transcompile
 	@echo
 	@echo "------------------------------------------"
-	@echo "Deploying plugin to your .qgis2 directory."
+	@echo "Deploying plugin to your .qgis3 directory."
 	@echo "------------------------------------------"
 	# The deploy  target only works on unix like operating system where
 	# the Python plugin directory is located at:
@@ -113,7 +120,10 @@ deploy: compile doc transcompile
 	cp -vfr i18n $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 	cp -vfr $(HELP) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/help
 	# Copy extra directories if any
-	(foreach EXTRA_DIR,(EXTRA_DIRS), cp -R (EXTRA_DIR) (HOME)/(QGISDIR)/python/plugins/(PLUGINNAME)/;)
+	#foreach EXTRA_DIR, (EXTRA_DIRS), cp -R (EXTRA_DIR) (HOME)/(QGISDIR)/python/plugins/(PLUGINNAME)/;
+	# copy extra directories BY NAME !!!
+	cp -vfr data $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/data
+	cp -vfr output $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/output
 
 
 # The dclean target removes compiled python files from plugin directory
