@@ -1,5 +1,7 @@
 <RCC>
-    <qresource prefix="/plugins/AnimateOsm" >
+    <qresource prefix="/plugins/AnimateOsm">
         <file>icon.png</file>
+        <file>510_logo_linear_small.png</file>
+        <file>510_logo_linear.png</file>
     </qresource>
 </RCC>
