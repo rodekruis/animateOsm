@@ -1,9 +1,9 @@
 *.pyc
 *~
-plugin/AnimateOsm/scripts/compile-strings.sh
-plugin/plugin
+AnimateOsm/scripts/compile-strings.sh
+plugin
 *.qgs
 *.qgd
-plugin/AnimateOsm/data/*.osm
-plugin/AnimateOsm/output/*.png
+AnimateOsm/data/*.osm
+AnimateOsm/output/*.png
 
