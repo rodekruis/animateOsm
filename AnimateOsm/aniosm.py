@@ -661,7 +661,4 @@ class AnimateOsm:
 
     def gui_show_help(self):
         self.log('help')
-        if not self.dev:
-            showPluginHelp(filename = 'help/build/html/index')
-        else:
-            showPluginHelp(filename = 'help/index')
+        showPluginHelp(filename = 'help/index')
