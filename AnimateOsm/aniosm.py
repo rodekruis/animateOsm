@@ -20,21 +20,24 @@
  *                                                                         *
  ***************************************************************************/
 """
+import os.path
+from math import floor, ceil
+import time
+
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QDateTime, QVariant, QSize
 from PyQt5.QtGui import QIcon, QImage, QColor, QPainter, QPixmap
 from PyQt5.QtWidgets import QAction, QFileDialog, QProgressBar
+
 from qgis.core import QgsMessageLog, Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, \
     QgsVectorLayer, QgsField, QgsProject, QgsFeature, QgsGeometry, QgsMapRendererSequentialJob, QgsMapSettings
 from qgis.gui import QgsFileWidget
+from qgis.utils import showPluginHelp
+
 # Initialize Qt resources from file resources.py
 from .resources import *
 
 # Import the code for the DockWidget
 from .aniosm_dockwidget import AnimateOsmDockWidget
-import os.path
-from math import floor, ceil
-import time
-
 from .osm_diff import OsmDiffParser, download_osm_diff
 
 
@@ -83,6 +86,7 @@ class AnimateOsm:
         self.pluginIsActive = False
         self.dockwidget = None
 
+        self.dev = True
         self.do_log = False
         self.polygon_layer = None
 
@@ -267,7 +271,7 @@ class AnimateOsm:
             # connections
             self.dockwidget.pushButton_open_file.clicked.connect(self.select_and_open_file)
             self.dockwidget.pushButton_download.clicked.connect(self.download_and_open_file)
-            
+
             self.dockwidget.dateTimeEdit_start.dateTimeChanged.connect(self.update_interval)
             self.dockwidget.dateTimeEdit_end.dateTimeChanged.connect(self.update_interval)
             self.dockwidget.spinBox_duration.valueChanged.connect(self.update_interval)
@@ -280,6 +284,8 @@ class AnimateOsm:
             self.dockwidget.lineEdit_output_dir.setText(self.output_dir)
             self.dockwidget.comboBox_style.currentTextChanged.connect(self.set_style)
             self.dockwidget.pushButton_export.setEnabled(False)
+
+            self.dockwidget.pushButton_help.clicked.connect(self.gui_show_help)
 
             self.set_style_options()
 
@@ -653,3 +659,9 @@ class AnimateOsm:
             img.save(filename)
             progress.setValue(frame_id)
 
+    def gui_show_help(self):
+        self.log('help')
+        if not self.dev:
+            showPluginHelp(filename = 'help/build/html/index')
+        else:
+            showPluginHelp(filename = 'help/index')

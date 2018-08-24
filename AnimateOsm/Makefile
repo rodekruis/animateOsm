@@ -122,8 +122,8 @@ deploy: compile doc transcompile
 	# Copy extra directories if any
 	#foreach EXTRA_DIR, (EXTRA_DIRS), cp -R (EXTRA_DIR) (HOME)/(QGISDIR)/python/plugins/(PLUGINNAME)/;
 	# copy extra directories BY NAME !!!
-	cp -vfr data $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/data
-	cp -vfr output $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/output
+	cp -vfr data $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/
+	cp -vfr output $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/
 
 
 # The dclean target removes compiled python files from plugin directory
