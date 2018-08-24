@@ -6,4 +6,5 @@ plugin
 *.qgd
 AnimateOsm/data/*.osm
 AnimateOsm/output/*.png
+AnimateOsm/help/build
 
