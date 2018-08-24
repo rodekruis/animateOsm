@@ -10,7 +10,7 @@
 name=Animate OSM
 qgisMinimumVersion=3.0
 description=Animates OSM changes within a time frame and bounding box. This plugin has been developed for creating visualizations of work processed in hotosm.org tasks. Currently it only supports buildings.
-version=0.1
+version=0.1.1
 author=510, an initiative of The Netherlands Red Cross
 email=rnijssen@rodekruis.nl
 
