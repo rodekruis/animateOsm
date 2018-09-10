@@ -30,7 +30,7 @@ from .networkaccessmanager import NetworkAccessManager
 
 def download_osm_diff(self, query, filename, url=u'https://lz4.overpass-api.de/api/interpreter/'):
     self.log(u'download_osm_diff')
-    
+
     #overpass_url = 'https://overpass-api.de/api/interpreter'
     #overpass_url = 'https://overpass-turbo.eu/'
     #overpass_url = 'https://lz4.overpass-api.de/api/interpreter'
@@ -47,9 +47,10 @@ def download_osm_diff(self, query, filename, url=u'https://lz4.overpass-api.de/a
     (response, content) = nam.request(overpass_url, method='POST', headers=headers, body=query)
     self.log(response)
     self.log(content)
-    osm_file = open(filename, 'w')
-    osm_file.write(content.decode("utf-8"))
+    osm_file = open(filename, 'wb')
+    osm_file.write(content)
     osm_file.close()
+
 
 
 
@@ -85,28 +86,28 @@ class OsmDiffParser():
 
     def __get_time(self, s):
         osm_time_format = '%Y-%m-%dT%H:%M:%SZ'
-        return time.strptime(s, osm_time_format) 
+        return time.strptime(s, osm_time_format)
 
 
     def read(self, filename):
         infile = open(filename, 'r')
         root = ET.fromstring(infile.read())
         infile.close()
-        
+
         action_cnt = 0
         delete_cnt = 0
         modify_cnt = 0
         create_cnt = 0
         other_cnt = 0
-        
+
         for action in root.iter('action'):
             action_cnt += 1
             action_type = action.attrib['type']
             if action_type in ['delete', 'modify', 'create']:
-                
+
                 if action_type == 'delete':
                     delete_cnt += 1
-                
+
                 if action_type == 'modify':
                     modify_cnt += 1
                     new = action.find('new')
@@ -115,7 +116,7 @@ class OsmDiffParser():
                             node = self.parse_node(child)
                             if node is not None:
                                 self.nodes[node['id']] = node
-                
+
                 if action_type == 'create':
                     create_cnt += 1
                     for child in action:
@@ -132,7 +133,7 @@ class OsmDiffParser():
                 #print('other action type!')
 
 
-        
+
         #print('action_cnt: %s' % action_cnt)
         #print('delete_cnt: %s' % delete_cnt)
         #print('modify_cnt: %s' % modify_cnt)
@@ -143,7 +144,7 @@ class OsmDiffParser():
         #print(len(self.ways))
 
 
-        
+
     def parse_node(self, node):
         #<node id="1703119312" lat="18.0242059" lon="-63.0808480" version="2" timestamp="2015-04-15T06:31:13Z" changeset="30228200" uid="402624" user="bdiscoe"/>
         result = {}
@@ -175,7 +176,7 @@ class OsmDiffParser():
             try:
                 # node has geometry:
                 points.append('%s %s' % (nd.attrib['lon'], nd.attrib['lat']))
-            except: 
+            except:
                 try:
                     if p:
                         p = False
@@ -188,7 +189,3 @@ class OsmDiffParser():
             # TODO: check if type is polygon or linestring (or point)
             result['wkt'] = 'POLYGON((%s))' % (','.join(points))
         return result
-
-
-
-
