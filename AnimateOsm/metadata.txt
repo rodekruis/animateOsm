@@ -23,7 +23,9 @@ repository=https://github.com/rodekruis/animateOsm
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-# changelog=
+changelog=
+    0.2.1    (09-2018) fix for mac, new yellow style, unchecked experimental
+    0.2.0    (08-2018) initial version
 
 # Tags are comma separated with spaces allowed
 tags=animation animate osm openstreetmap diff missing maps hotosm
@@ -32,7 +34,7 @@ homepage=http://510.global
 category=Web
 icon=icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
