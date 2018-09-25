@@ -661,4 +661,4 @@ class AnimateOsm:
 
     def gui_show_help(self):
         self.log('help')
-        showPluginHelp(filename = 'help/index')
+        showPluginHelp(filename = 'help/html/index')
