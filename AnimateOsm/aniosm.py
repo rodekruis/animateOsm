@@ -263,7 +263,7 @@ class AnimateOsm:
             # TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
- 
+
             # set default datetimes
             self.dockwidget.dateTimeEdit_start.setDateTime(QDateTime.currentDateTime().addDays(-40))
             self.dockwidget.dateTimeEdit_end.setDateTime(QDateTime.currentDateTime())
@@ -359,12 +359,13 @@ class AnimateOsm:
         self.log(self.parser)
 
         if len(self.parser.ways) == 0:
-            iface.messageBar().pushMessage("Info", "No data in OSM file", level=Qgis.Info)
+            self.iface.messageBar().pushMessage("Info", "No data in OSM file", level=Qgis.Info)
             self.dockwidget.pushButton_export.setEnabled(False)
             return
 
         for way in self.parser.ways:
-            self.add_polygon(self.parser.ways[way])
+            if self.parser.ways[way]['wkt'] is not None:
+                self.add_polygon(self.parser.ways[way])
         self.polygon_layer.updateExtents()
 
         if update_extents:
@@ -396,7 +397,7 @@ class AnimateOsm:
 
     def update_interval(self):
         self.interval_msecs = self.dockwidget.spinBox_duration.value() * 3600000
-        
+
         start_time_msecs = self.dockwidget.dateTimeEdit_start.dateTime().toMSecsSinceEpoch()
         animation_start_time_msecs = floor(start_time_msecs / self.interval_msecs) * self.interval_msecs
         self.animation_start_time = QDateTime.fromMSecsSinceEpoch(animation_start_time_msecs)
@@ -481,7 +482,7 @@ class AnimateOsm:
 
     def create_memory_layer(self, feature_type=u'polygon'):
         layer_name = u'osm_diff_%ss' % (feature_type)
-        
+
         # delete existing layers
         layers = QgsProject.instance().mapLayersByName(layer_name)
         for layer in layers:
@@ -528,7 +529,7 @@ class AnimateOsm:
         # set frame age for all features. Null for future features
         epoch_field_index = layer.fields().indexFromName('epoch')
         age_field_index = layer.fields().indexFromName('frame_age')
-        
+
         for feat in layer.getFeatures():
             feat_epoch = feat.attributes()[epoch_field_index]
             if feat_epoch <= frame_epoch:
@@ -543,6 +544,7 @@ class AnimateOsm:
     def update_slider(self):
         frame_epoch = ((self.dockwidget.horizontalSlider_frames.value() - 1) * self.interval_msecs) + self.animation_start_time.toMSecsSinceEpoch()
         frame_time = QDateTime.fromMSecsSinceEpoch(frame_epoch)
+        self.frame_time = frame_time
         self.dockwidget.label_actual_frame.setText('frame: %s (%s)' % (
             self.dockwidget.horizontalSlider_frames.value(),
             frame_time.toString(self.dockwidget.dateTimeEdit_end.displayFormat()))
@@ -648,12 +650,17 @@ class AnimateOsm:
         for frame_id in range(first_frame, last_frame + 1):
 
             self.dockwidget.horizontalSlider_frames.setValue(frame_id)
+
             self.update_slider()
 
             job.start()
             job.waitForFinished()
             img = job.renderedImage()
-            base_name = u'frame_{0}.png'.format(frame_id)
+            try:
+                frame_code = self.frame_time.toString('yyyyMMdd_hhmm')
+            except:
+                frame_code = frame_id
+            base_name = u'frame_{0}.png'.format(frame_code)
             filename = os.path.join(self.output_dir, base_name)
             self.log(filename)
             img.save(filename)
@@ -661,4 +668,4 @@ class AnimateOsm:
 
     def gui_show_help(self):
         self.log('help')
-        showPluginHelp(filename = 'help/html/index')
+        showPluginHelp(filename = 'help/index')

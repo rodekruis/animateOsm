@@ -1,7 +1,7 @@
-# This file contains metadata for your plugin. Since 
-# version 2.0 of QGIS this is the proper way to supply 
-# information about a plugin. The old method of 
-# embedding metadata in __init__.py will 
+# This file contains metadata for your plugin. Since
+# version 2.0 of QGIS this is the proper way to supply
+# information about a plugin. The old method of
+# embedding metadata in __init__.py will
 # is no longer supported since version 2.0.
 
 # This file should be included when you package your plugin.# Mandatory items:
@@ -10,7 +10,7 @@
 name=Animate OSM
 qgisMinimumVersion=3.0
 description=Animates OSM changes within a time frame and bounding box. This plugin has been developed for creating visualizations of work processed in hotosm.org tasks. Currently it only supports buildings.
-version=0.2.2
+version=0.3.0
 author=510, an initiative of The Netherlands Red Cross
 email=rnijssen@rodekruis.nl
 
@@ -24,6 +24,7 @@ repository=https://github.com/rodekruis/animateOsm
 
 # Uncomment the following line and add your changelog:
 changelog=
+    0.3.0    (10-2018) date/time in output filename and fix for invalid polygons
     0.2.2    (09-2018) fix for opening help file
     0.2.1    (09-2018) fix for mac, new yellow style, unchecked experimental
     0.2.0    (08-2018) initial version
@@ -39,4 +40,3 @@ experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
-
